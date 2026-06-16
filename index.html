@@ -1,0 +1,94 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>melove | Acervo</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.4.1/papaparse.min.js"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,700;1,400&family=Space+Mono&display=swap" rel="stylesheet">
+    
+    <style>
+        body {
+            background-color: #000;
+            color: #fff;
+            /* Fonte elegante para o título */
+            font-family: 'Playfair Display', serif; 
+        }
+        .mono {
+            /* Fonte parecida com máquina de escrever para os subtítulos */
+            font-family: 'Space Mono', monospace; 
+        }
+        /* Fundo da borboleta (vamos colocar a imagem real depois) */
+        .bg-borboleta {
+            background-image: radial-gradient(circle, rgba(255,255,255,0.1) 0%, rgba(0,0,0,0) 60%);
+        }
+    </style>
+</head>
+<body class="min-h-screen flex flex-col items-center pt-16 px-6">
+
+    <header class="text-center w-full max-w-2xl">
+        <h1 class="text-6xl tracking-tight mb-2">melove</h1>
+        <p class="mono text-xs text-gray-500 uppercase tracking-widest mb-8">Um acervo juntando coisinhas</p>
+        
+        <div class="relative w-full">
+            <input 
+                type="text" 
+                id="searchBar"
+                class="w-full bg-transparent border border-gray-600 rounded-md py-3 px-10 text-sm mono focus:outline-none focus:border-white transition-colors"
+                placeholder="Buscar obras, diretores, gêneros..."
+            >
+            <span class="absolute left-3 top-3 text-gray-500">⚲</span>
+        </div>
+        
+        <p id="totalObrasText" class="mono text-xs mt-8 tracking-widest uppercase">Carregando acervo...</p>
+    </header>
+
+    <main class="relative w-full max-w-md h-96 mt-12 bg-borboleta flex items-center justify-center">
+        <nav class="mono text-sm tracking-widest">
+            <a href="#" class="absolute top-0 left-1/2 -translate-x-1/2 hover:text-gray-400">CATÁLOGO</a>
+            <a href="#" class="absolute top-1/4 right-0 hover:text-gray-400">GÊNEROS</a>
+            <a href="#" class="absolute top-1/4 left-0 hover:text-gray-400">FILMES</a>
+            <a href="#" class="absolute bottom-1/4 right-0 hover:text-gray-400">DORAMAS</a>
+            <a href="#" class="absolute bottom-1/4 left-0 hover:text-gray-400">ANIMAÇÕES</a>
+            <a href="#" class="absolute bottom-0 left-1/2 -translate-x-1/2 hover:text-gray-400">SÉRIES</a>
+        </nav>
+    </main>
+
+    <footer class="mt-auto pb-8 mono text-xs text-gray-500 tracking-widest">
+        ATUALIZANDO SEMPRE QUE POSSÍVEL &lt;3
+    </footer>
+
+    <script>
+        // Links das suas planilhas
+        const urlObras = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vQ_NYCR__vom0rgje4_v1WYigRPnf0W_eZcwVraqrBFlAGDDaOl0oTwDrt8aMot7EShzc1OlitVsNcJ/pub?gid=0&single=true&output=csv';
+        const urlEpisodios = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vQ_NYCR__vom0rgje4_v1WYigRPnf0W_eZcwVraqrBFlAGDDaOl0oTwDrt8aMot7EShzc1OlitVsNcJ/pub?gid=404247235&single=true&output=csv';
+
+        let bancoDeObras = [];
+
+        // FUNÇÃO DE BUSCA INTELIGENTE: Remove acentos, traços e deixa tudo minúsculo
+        function limparTexto(texto) {
+            if(!texto) return "";
+            return texto.normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/[-]/g, " ").toLowerCase();
+        }
+
+        // Carregar Planilha
+        Papa.parse(urlObras, {
+            download: true,
+            header: true,
+            complete: function(results) {
+                bancoDeObras = results.data.filter(obra => obra.id_obra); // Filtra linhas vazias
+                document.getElementById('totalObrasText').innerText = `${bancoDeObras.length} OBRAS AO TOTAL...`;
+                console.log("Planilha carregada!", bancoDeObras);
+            }
+        });
+
+        // Configuração da barra de busca
+        document.getElementById('searchBar').addEventListener('input', function(e) {
+            const termoBuscado = limparTexto(e.target.value);
+            // Aqui faremos a mágica de filtrar os itens na próxima fase!
+            console.log("Você está digitando:", termoBuscado);
+        });
+    </script>
+</body>
+</html>
