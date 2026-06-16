@@ -3,447 +3,1020 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>melove | Acervo</title>
-    <script src="https://cdn.tailwindcss.com"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.4.1/papaparse.min.js"></script>
-    <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,700;1,400&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet">
+    <title>melove — um acervo juntando coisas que encontra por aí</title>
     
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,700;1,400&family=Space+Mono:ital,wght@0,400;0,700;1,400&family=Plus+Jakarta+Sans:wght@400;600&display=swap" rel="stylesheet">
+    
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.4.1/papaparse.min.js"></script>
+
     <style>
+        /* ==========================================================================
+           VARIÁVEIS DE TEMA (MODO ESCURO FIXO)
+           ========================================================================== */
+        :root {
+            --bg-principal: #121212;
+            --texto-escuro: #f0f0f0;
+            --texto-mutado: #aaaaaa;
+            --linha-fina: #333333;
+            --bg-float: rgba(18, 18, 18, 0.9);
+            
+            --font-titulo: 'Boho Serif', 'Cormorant Garamond', serif;
+            --font-mono: 'Space Mono', monospace;
+            --font-detalhes: 'Space Mono', monospace;
+            --font-alternativa: 'Plus Jakarta Sans', sans-serif;
+            
+            --cl-livre: #2ecc71; --cl-10: #3498db; --cl-12: #f1c40f; 
+            --cl-14: #e67e22; --cl-16: #e74c3c; --cl-18: #555555;
+        }
+
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+
+        html { scroll-behavior: smooth; }
+
         body {
-            background-color: #000000;
-            color: #ffffff;
-            font-family: 'Playfair Display', serif;
-            -webkit-tap-highlight-color: transparent;
+            background-color: var(--bg-principal);
+            color: var(--texto-escuro);
+            font-family: var(--font-mono);
+            overflow-x: hidden;
+            min-height: 100vh;
+            max-width: 500px; 
+            margin: 0 auto;
+            position: relative;
         }
-        .mono {
-            font-family: 'Space Mono', monospace;
+
+        body.no-scroll { overflow: hidden; }
+        a { color: inherit; text-decoration: none; }
+        .hidden { display: none !important; }
+
+        /* ==========================================================================
+           ANIMAÇÕES SUAVES E LEVES
+           ========================================================================== */
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(8px); }
+            to { opacity: 1; transform: translateY(0); }
         }
-        /* Esconde as barras de rolagem mas mantém o funcionamento */
-        ::-webkit-scrollbar {
-            display: none;
+
+        section:not(.hidden) {
+            animation: fadeIn 0.3s ease-out forwards;
         }
+
+        .categoria-flutuante, .tag-modal, .linha-genero, .link-streaming, .link-livro, .ep-link-btn, .logo-site {
+            transition: transform 0.2s ease, color 0.2s ease, opacity 0.2s ease;
+        }
+
+        .categoria-flutuante:hover, .tag-modal:hover, .link-streaming:hover, .link-livro:hover, .ep-link-btn:hover {
+            transform: translateY(-2px);
+            color: var(--texto-mutado);
+        }
+
+        .categoria-flutuante:active, .tag-modal:active, .link-streaming:active, .link-livro:active, .ep-link-btn:active, .item-obra:active {
+            transform: scale(0.95);
+            opacity: 0.7;
+        }
+
+        /* ==========================================================================
+           CABEÇALHO
+           ========================================================================== */
+        header {
+            text-align: center;
+            padding: 40px 20px 15px 20px;
+            position: relative;
+        }
+
+        .logo-site {
+            font-family: var(--font-titulo);
+            font-size: 56px;
+            letter-spacing: -2px;
+            cursor: pointer;
+            line-height: 1;
+            transform: scaleY(1.2);
+            display: inline-block;
+            margin-bottom: 8px;
+        }
+
+        .descricao-site {
+            font-size: 8px;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            color: #aaaaaa;
+        }
+
+        /* ==========================================================================
+           BARRA DE PESQUISA
+           ========================================================================== */
+        .container-busca {
+            padding: 0 20px;
+            margin-bottom: 30px;
+        }
+
+        .form-busca { width: 100%; margin: 0; padding: 0; }
+
+        .wrapper-input {
+            border: 1px solid var(--texto-mutado);
+            border-radius: 6px;
+            display: flex;
+            align-items: center;
+            padding: 8px 12px;
+            transition: box-shadow 0.2s ease, border-color 0.2s ease;
+        }
+        
+        .wrapper-input:focus-within { 
+            border-color: var(--texto-escuro);
+            box-shadow: 0 4px 12px rgba(255,255,255,0.05); 
+        }
+
+        .icone-busca {
+            font-size: 14px;
+            margin-right: 10px;
+            transform: rotate(-45deg);
+            display: inline-block;
+            color: var(--texto-mutado);
+        }
+
+        .input-busca {
+            width: 100%;
+            border: none;
+            outline: none;
+            font-family: var(--font-mono);
+            font-size: 12px;
+            background: transparent;
+            color: var(--texto-escuro);
+            -webkit-appearance: none;
+        }
+        .input-busca::-webkit-search-cancel-button { display: none; }
+
+        .subtexto-busca {
+            text-align: center;
+            font-size: 10px;
+            font-weight: bold;
+            margin-top: 20px;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            color: var(--texto-mutado);
+        }
+
+        /* ==========================================================================
+           TELA INICIAL & FLOATERS
+           ========================================================================== */
+        .tela-inicial {
+            position: relative;
+            min-height: 480px;
+            height: 75vh;
+            max-height: 650px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            margin-top: 10px;
+        }
+
+        .borboleta-imagem {
+            max-width: 165px;
+            pointer-events: none;
+            user-select: none;
+            animation: floatBrilho 6s ease-in-out infinite;
+            filter: invert(1); /* Inverte a imagem preta para branca no fundo escuro */
+            opacity: 0.8;
+        }
+
+        @keyframes floatBrilho {
+            0%, 100% { transform: translateY(0px); filter: invert(1) drop-shadow(0 0 0px rgba(255,255,255,0)); }
+            50% { transform: translateY(-6px); filter: invert(1) drop-shadow(0 4px 12px rgba(255,255,255,0.1)); }
+        }
+
+        .categoria-flutuante {
+            position: absolute;
+            font-size: 9px;
+            text-transform: uppercase;
+            cursor: pointer;
+            letter-spacing: 1px;
+            background: var(--bg-float);
+            padding: 4px 8px;
+            border-radius: 4px;
+            z-index: 10;
+            border: 0.5px solid var(--linha-fina);
+        }
+
+        #cat-catalogo     { top: 2%; left: 50%; transform: translateX(-50%); }
+        #cat-curtas       { top: 12%; left: 15%; }
+        #cat-documentarios{ top: 12%; right: 5%; }
+        #cat-generos      { top: 25%; left: 3%; }
+        #cat-paises       { top: 25%; right: 3%; }
+        #cat-filmes       { top: 40%; left: 1%; }
+        #cat-series       { top: 40%; right: 1%; }
+        #cat-animes       { top: 55%; left: 3%; }
+        #cat-animacoes    { top: 55%; right: 3%; }
+        #cat-realitys     { bottom: 22%; left: 5%; }
+        #cat-livros       { bottom: 22%; right: 5%; } 
+        #cat-doramas      { bottom: 15%; left: 50%; transform: translateX(-50%); }
+        #cat-autores      { bottom: 3%; left: 15%; }
+        #cat-diretores    { bottom: 3%; right: 15%; }
+
+        footer {
+            text-align: center;
+            font-size: 8px;
+            color: var(--texto-mutado);
+            padding: 40px 20px 30px 20px;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        /* ==========================================================================
+           GRID CATÁLOGO & LISTAGENS
+           ========================================================================== */
+        .titulo-aba {
+            font-family: var(--font-alternativa);
+            font-size: 18px;
+            padding: 0 20px;
+            margin-bottom: 20px;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+            display: flex;
+            align-items: baseline;
+            gap: 10px;
+        }
+        
+        .titulo-aba span {
+            font-family: var(--font-mono);
+            font-size: 10px;
+            letter-spacing: 0;
+            font-weight: normal;
+            color: var(--texto-mutado);
+        }
+
+        .grid-catalogo {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 12px;
+            padding: 0 20px;
+            margin-bottom: 40px;
+        }
+
+        .item-obra {
+            cursor: pointer;
+            width: 100%;
+            aspect-ratio: 2 / 3;
+            border-radius: 12px;
+            overflow: hidden;
+            background-color: var(--linha-fina);
+            position: relative;
+        }
+
+        .poster-imagem {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            opacity: 0.9;
+            transition: opacity 0.3s;
+        }
+        .item-obra:hover .poster-imagem {
+            opacity: 1;
+        }
+
+        .grid-listagem {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 15px 20px;
+            padding: 0 20px;
+            margin-bottom: 40px;
+        }
+
+        .linha-genero {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            cursor: pointer;
+            color: var(--texto-mutado);
+            padding: 6px 0;
+            border-bottom: 1px dashed var(--linha-fina);
+            gap: 10px;
+            width: 100%;
+        }
+        
+        .nome-item-lista {
+            font-size: 11px;
+            text-transform: uppercase;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            flex: 1;
+        }
+
+        .qtd-item-lista {
+            font-size: 11px;
+            color: var(--texto-escuro);
+            font-weight: bold;
+            flex-shrink: 0;
+        }
+
+        /* ==========================================================================
+           MODAL DE DETALHES (FICHA DA OBRA)
+           ========================================================================== */
+        .modal-overlay {
+            position: fixed;
+            top: 0; left: 0; right: 0; bottom: 0;
+            width: 100%; height: 100%;
+            background-color: var(--bg-principal);
+            z-index: 1000;
+            overflow-y: auto;
+            -webkit-overflow-scrolling: touch;
+            padding: 20px;
+            padding-bottom: 100px;
+        }
+
+        .modal-conteudo {
+            max-width: 500px;
+            margin: 0 auto;
+        }
+
+        .modal-header-actions {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 15px;
+            font-family: var(--font-alternativa);
+        }
+
+        .botao-compartilhar {
+            font-size: 11px;
+            font-weight: bold;
+            cursor: pointer;
+            text-transform: uppercase;
+            color: var(--texto-mutado);
+            display: flex;
+            align-items: center;
+            gap: 5px;
+        }
+        .botao-compartilhar:active { opacity: 0.5; }
+
+        .botao-fechar-modal {
+            font-size: 24px;
+            font-weight: 300;
+            cursor: pointer;
+        }
+        .botao-fechar-modal:active { opacity: 0.5; }
+
+        .banner-obra-modal {
+            width: 100%;
+            aspect-ratio: 16 / 9;
+            object-fit: cover;
+            border-radius: 8px;
+            margin-bottom: 15px;
+            border: 1px solid var(--linha-fina);
+        }
+
+        .header-modal-livro {
+            display: flex;
+            gap: 15px;
+            align-items: flex-start;
+            margin-bottom: 20px;
+        }
+        .capa-livro-modal {
+            width: 120px;
+            aspect-ratio: 2 / 3;
+            object-fit: cover;
+            border-radius: 8px;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.5);
+            border: 1px solid var(--linha-fina);
+        }
+        
+        .info-bloco-esquerda { flex: 1; min-width: 0; }
+
+        .titulo-obra-modal {
+            font-family: var(--font-titulo);
+            font-size: 34px;
+            line-height: 1.1; 
+            margin-bottom: 12px;
+            letter-spacing: -1px;
+            word-wrap: break-word;
+            overflow-wrap: break-word;
+            hyphens: auto;
+        }
+
+        .autor-diretor-modal {
+            font-style: italic;
+            font-size: 11px;
+            margin-bottom: 10px;
+            display: inline-block;
+            cursor: pointer;
+            text-decoration: underline;
+            text-underline-offset: 3px;
+            color: var(--texto-mutado);
+        }
+
+        .linha-tecnica {
+            font-size: 11px;
+            margin-bottom: 10px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            flex-wrap: wrap;
+            color: var(--texto-mutado);
+        }
+
+        .badge-classificacao {
+            padding: 1px 4px;
+            color: white;
+            font-weight: bold;
+            font-size: 10px;
+            border-radius: 2px;
+        }
+
+        .container-tags-generos {
+            font-size: 11px;
+            margin-bottom: 15px;
+            line-height: 1.6;
+        }
+        .tag-modal { text-decoration: underline; margin-right: 8px; cursor: pointer; display: inline-block; color: var(--texto-mutado); }
+        .tag-modal.bold { font-weight: bold; color: var(--texto-escuro); }
+
+        .bloco-outros-titulos { margin-bottom: 20px; }
+        .label-outros-titulos { font-family: var(--font-titulo); font-size: 14px; }
+        .conteudo-outros-titulos { font-family: var(--font-alternativa); font-size: 11px; color: var(--texto-mutado); white-space: pre-wrap; }
+
+        .sinopse-modal {
+            font-size: 9px;
+            line-height: 1.6;
+            text-align: justify;
+            margin-bottom: 30px;
+            color: var(--texto-mutado);
+        }
+
+        .bloco-links-filme {
+            display: flex;
+            justify-content: center;
+            gap: 20px;
+            align-items: center;
+            margin-bottom: 30px;
+        }
+        .link-streaming { font-size: 14px; font-weight: bold; text-decoration: underline; cursor: pointer; display: inline-block;}
+        .link-streaming.visto { color: var(--linha-fina) !important; text-decoration: none; }
+
+        .bloco-legendas { font-size: 10px; margin-bottom: 20px;}
+        .label-legendas { font-family: var(--font-titulo); font-size: 16px; margin-bottom: 5px; }
+
+        .bloco-links-livro {
+            display: flex;
+            align-items: center;
+            gap: 30px;
+            margin-bottom: 30px;
+            justify-content: center;
+        }
+        .links-livro-col {
+            display: flex;
+            gap: 20px;
+            text-align: center;
+        }
+        .link-livro { font-size: 14px; font-weight: bold; text-decoration: underline; cursor: pointer; display: inline-block;}
+
+        .titulo-temporada-gatilho {
+            font-family: var(--font-titulo);
+            font-size: 28px;
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            margin-bottom: 25px;
+        }
+
+        .item-episodio {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 25px;
+            align-items: flex-start;
+            border-bottom: 1px solid var(--linha-fina);
+            padding-bottom: 15px;
+        }
+        
+        .ep-info-esquerda { flex: 1; padding-right: 15px; }
+        .ep-titulo-linha {
+            font-size: 11px;
+            margin-bottom: 8px;
+            word-wrap: break-word;
+            line-height: 1.3;
+        }
+        .ep-num { font-weight: bold; color: var(--texto-mutado); }
+        .ep-sinopse {
+            font-size: 8px;
+            text-align: justify;
+            color: var(--texto-mutado);
+            line-height: 1.5;
+        }
+
+        .ep-links-direita { text-align: right; font-size: 10px; min-width: 70px; }
+        .ep-link-btn {
+            font-weight: bold;
+            text-decoration: underline;
+            display: block;
+            margin-bottom: 8px;
+            cursor: pointer;
+        }
+        .ep-link-btn.visto { color: var(--linha-fina) !important; text-decoration: none; }
+
+        .wrapper-player-video {
+            width: 100%;
+            aspect-ratio: 16 / 9;
+            background-color: #000;
+            border-radius: 8px;
+            overflow: hidden;
+            margin-bottom: 15px;
+            transition: all 0.4s ease;
+            border: 1px solid var(--linha-fina);
+        }
+        .iframe-player { width: 100%; height: 100%; border: none; }
+
     </style>
 </head>
-<body class="min-h-screen flex flex-col items-center pt-12 px-4 pb-6 selection:bg-neutral-800">
+<body>
 
-    <header class="text-center w-full max-w-xl z-20">
-        <h1 onclick="voltarParaHome()" class="text-5xl tracking-tight mb-1 cursor-pointer hover:opacity-80 active:scale-95 transition-all">melove</h1>
-        <p class="mono text-[10px] text-neutral-500 uppercase tracking-[0.25em] mb-6">Um acervo juntando coisinhas</p>
-        
-        <div class="relative w-full px-2 mb-6">
-            <input 
-                type="text" 
-                id="searchBar"
-                class="w-full bg-transparent border border-neutral-800 rounded-full py-2.5 pl-10 pr-4 text-xs mono focus:outline-none focus:border-neutral-500 transition-colors text-center"
-                placeholder="BUSCAR OBRAS, DIRETORES, GÊNEROS..."
-            >
-            <span class="absolute left-6 top-3 text-neutral-600 text-xs mono">⚲</span>
-        </div>
+    <header>
+        <div class="logo-site" onclick="navegarPara('home')">melove</div>
+        <div class="descricao-site">um acervo juntando coisas que encontra por aí</div>
     </header>
 
-    <main id="app-content" class="w-full max-w-xl flex-1 flex flex-col items-center justify-center relative my-4">
-        <p class="mono text-xs text-neutral-500 tracking-widest uppercase animate-pulse">Carregando acervo...</p>
+    <div class="container-busca" id="areaBusca">
+        <form class="form-busca" id="formBusca" action="javascript:void(0);">
+            <div class="wrapper-input">
+                <span class="icone-busca">⚲</span>
+                <input type="search" id="campoPesquisa" class="input-busca" placeholder="Pesquisar obras, diretores, gêneros...">
+            </div>
+        </form>
+        <div id="subtextoDinamicoBusca" class="subtexto-busca">CARREGANDO ACERVO...</div>
+    </div>
+
+    <main id="conteudoPrincipal">
+        
+        <section id="viewHome" class="tela-inicial hidden">
+            <div class="categoria-flutuante" id="cat-catalogo" onclick="navegarPara('catalogo', 'Todos')">CATÁLOGO</div>
+            <div class="categoria-flutuante" id="cat-curtas" onclick="navegarPara('catalogo', 'Curta')">CURTAS</div>
+            <div class="categoria-flutuante" id="cat-documentarios" onclick="navegarPara('catalogo', 'Documentário')">DOCUMENTÁRIOS</div>
+            <div class="categoria-flutuante" id="cat-generos" onclick="navegarPara('lista', 'generos')">GÊNEROS</div>
+            <div class="categoria-flutuante" id="cat-paises" onclick="navegarPara('lista', 'pais')">PAÍSES</div>
+            <div class="categoria-flutuante" id="cat-autores" onclick="navegarPara('lista', 'autor')">AUTORES</div>
+            <div class="categoria-flutuante" id="cat-diretores" onclick="navegarPara('lista', 'diretor')">DIRETORES</div>
+            
+            <div class="categoria-flutuante" id="cat-filmes" onclick="navegarPara('catalogo', 'Filme')">FILMES</div>
+            
+            <img class="borboleta-imagem" src="borboleta.jpg" alt="Borboleta">
+
+            <div class="categoria-flutuante" id="cat-series" onclick="navegarPara('catalogo', 'Série')">SÉRIES</div>
+            <div class="categoria-flutuante" id="cat-animes" onclick="navegarPara('catalogo', 'Anime')">ANIMES</div>
+            <div class="categoria-flutuante" id="cat-animacoes" onclick="navegarPara('catalogo', 'Animação')">ANIMAÇÕES</div>
+            <div class="categoria-flutuante" id="cat-doramas" onclick="navegarPara('catalogo', 'Dorama')">DORAMAS</div>
+            <div class="categoria-flutuante" id="cat-realitys" onclick="navegarPara('catalogo', 'Reality')">REALITYS</div>
+            <div class="categoria-flutuante" id="cat-livros" onclick="navegarPara('catalogo', 'Livro')">LIVROS</div>
+        </section>
+
+        <section id="viewCatalogo" class="hidden">
+            <div class="titulo-aba" id="tituloAbaCatalogo">CATÁLOGO <span></span></div>
+            <div class="grid-catalogo" id="gridObras"></div>
+        </section>
+
+        <section id="viewListagem" class="hidden">
+            <div class="titulo-aba" id="tituloAbaListagem">LISTA <span></span></div>
+            <div class="grid-listagem" id="containerListagem"></div>
+        </section>
+
     </main>
 
-    <footer class="w-full text-center mono text-[10px] text-neutral-600 tracking-widest mt-auto pt-4 border-t border-neutral-950">
-        ATUALIZANDO SEMPRE QUE POSSÍVEL &lt;3
+    <div id="modalObra" class="modal-overlay hidden">
+        <div class="modal-conteudo">
+            <div class="modal-header-actions">
+                <span class="botao-compartilhar" id="btnCompartilhar">➦ COMPARTILHAR</span>
+                <span class="botao-fechar-modal" onclick="fecharModalPeloBotao()">X</span>
+            </div>
+            
+            <div id="wrapperPlayerVideo" class="wrapper-player-video hidden">
+                <iframe id="iframePlayerVideo" class="iframe-player" src="" allowfullscreen></iframe>
+            </div>
+
+            <div id="modalConteudoDinamico"></div>
+        </div>
+    </div>
+
+    <footer id="footerTexto" class="hidden">
+        reunindo tudo o que eu encontro por aí em um só lugar &lt;3
     </footer>
 
     <script>
-        // Seus links CSV oficiais das planilhas
-        const urlObras = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vQ_NYCR__vom0rgje4_v1WYigRPnf0W_eZcwVraqrBFlAGDDaOl0oTwDrt8aMot7EShzc1OlitVsNcJ/pub?gid=0&single=true&output=csv';
-        const urlEpisodios = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vQ_NYCR__vom0rgje4_v1WYigRPnf0W_eZcwVraqrBFlAGDDaOl0oTwDrt8aMot7EShzc1OlitVsNcJ/pub?gid=404247235&single=true&output=csv';
+        // ==========================================================================
+        // CÉREBRO: BANCO DE DADOS DINÂMICO (Atualizado para as 2 novas planilhas)
+        // ==========================================================================
+        const URL_OBRAS = "https://docs.google.com/spreadsheets/d/e/2PACX-1vQ_NYCR__vom0rgje4_v1WYigRPnf0W_eZcwVraqrBFlAGDDaOl0oTwDrt8aMot7EShzc1OlitVsNcJ/pub?gid=0&single=true&output=csv";
+        const URL_EPISODIOS = "https://docs.google.com/spreadsheets/d/e/2PACX-1vQ_NYCR__vom0rgje4_v1WYigRPnf0W_eZcwVraqrBFlAGDDaOl0oTwDrt8aMot7EShzc1OlitVsNcJ/pub?gid=404247235&single=true&output=csv";
 
-        // Bancos de dados locais salvos na memória do site
-        let obras = [];
-        let episodios = [];
-        let telaAtual = 'home'; 
+        let bancoDadosObras = [];
+        let bancoEpisodios = {};
 
-        // Função de Limpeza de Texto para Busca Perfeita (Remove acentos, traços, etc)
-        function limparTexto(texto) {
-            if (!texto) return "";
-            return texto.toString().normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/[-—_]/g, " ").toLowerCase().trim();
-        }
+        const separatorASCII = `.:::.        .:::.
+::::::.      .::::::
+::::::::    ::::::::
+ ::::::::  ::::::::
+  :::::: :: ::::::
+   :::: :::: ::::
+     :: :::: ::
+        ::::
+        ::::
+        ::::
+         ::`;
 
-        // CARREGAMENTO DOS DADOS (Roda assim que abre o site)
-        function inicializarAcervo() {
-            Papa.parse(urlObras, {
-                download: true,
-                header: true,
-                complete: function(resultadoObras) {
-                    obras = resultadoObras.data.filter(o => o.id_obra && o.titulo);
-                    
-                    // Logo após carregar as obras, carrega os episódios
-                    Papa.parse(urlEpisodios, {
-                        download: true,
-                        header: true,
-                        complete: function(resultadoEps) {
-                            episodios = resultadoEps.data.filter(e => e.id_episodio && e.id_obra_relacionada);
-                            showHome(); // Abre a tela inicial com tudo pronto
-                        }
-                    });
-                }
+        // ==========================================================================
+        // ORDENAÇÃO GLOBAL
+        // ==========================================================================
+        function ordenarDecrescente(obras) {
+            return obras.sort((a, b) => {
+                let anoB = parseInt(b.ano) || 0;
+                let anoA = parseInt(a.ano) || 0;
+                return anoB - anoA;
             });
         }
 
-        // TELA 1: HOME (Menu principal estilizado com a borboleta)
-        function showHome() {
-            telaAtual = 'home';
-            document.getElementById('searchBar').value = ''; // Limpa a barra
-            
-            const content = document.getElementById('app-content');
-            content.className = "w-full max-w-md flex flex-col items-center justify-center relative min-h-[380px]";
-            
-            content.innerHTML = `
-                <p class="mono text-[11px] text-neutral-400 tracking-widest uppercase mb-4">${obras.length} OBRAS AO TOTAL...</p>
-                
-                <div class="relative w-full h-80 flex items-center justify-center">
-                    
-                    <div class="absolute inset-0 flex items-center justify-center opacity-15 pointer-events-none">
-                        <svg width="180" height="180" viewBox="0 0 100 100" fill="none" stroke="currentColor" stroke-width="0.8">
-                            <path d="M50 65 C40 60, 15 55, 15 35 C15 20, 35 15, 48 38 C49 40, 50 42, 50 45" />
-                            <path d="M50 65 C60 60, 85 55, 85 35 C85 20, 65 15, 52 38 C51 40, 50 42, 50 45" />
-                            <path d="M50 65 C43 65, 25 70, 25 80 C25 88, 42 85, 48 70 C49 68, 50 66, 50 65" />
-                            <path d="M50 65 C57 65, 75 70, 75 80 C75 88, 58 85, 52 70 C51 68, 50 66, 50 65" />
-                            <line x1="50" y1="30" x2="50" y2="75" stroke-width="1.2"/>
-                            <path d="M50 30 C48 25, 42 20, 40 22 M50 30 C52 25, 58 20, 60 22" />
-                        </svg>
-                    </div>
+        // ==========================================================================
+        // HISTORY API BLINDADA & NAVEGAÇÃO
+        // ==========================================================================
+        window.addEventListener('load', async () => {
+            await carregarBancoDeDados();
+            configurarBuscadorInteligente();
 
-                    <nav class="absolute inset-0 w-full h-full mono text-[12px] tracking-widest text-neutral-300 font-medium">
-                        <button onclick="filtrarCatalogo('todos', 'CATÁLOGO')" class="absolute top-2 left-1/2 -translate-x-1/2 hover:text-white transition-colors">CATÁLOGO</button>
-                        
-                        <button onclick="filtrarCatalogo('Filme', 'FILMES')" class="absolute top-16 left-4 hover:text-white transition-colors">FILMES</button>
-                        <button onclick="mostrarListaMetadata('generos', 'GÊNEROS')" class="absolute top-16 right-4 hover:text-white transition-colors">GÊNEROS</button>
-                        
-                        <button onclick="mostrarListaMetadata('pais', 'PAÍSES')" class="absolute top-36 left-2 hover:text-white transition-colors">PAÍSES</button>
-                        <button onclick="filtrarCatalogo('Anime', 'ANIMES')" class="absolute top-36 right-2 hover:text-white transition-colors">ANIMES</button>
-                        
-                        <button onclick="filtrarCatalogo('Animacao', 'ANIMAÇÕES')" class="absolute bottom-20 left-4 hover:text-white transition-colors">ANIMAÇÕES</button>
-                        <button onclick="filtrarCatalogo('Dorama', 'DORAMAS')" class="absolute bottom-20 right-4 hover:text-white transition-colors">DORAMAS</button>
-                        
-                        <button onclick="mostrarListaMetadata('diretor', 'DIRETORES')" class="absolute bottom-4 left-6 hover:text-white transition-colors">DIRETORES</button>
-                        <button onclick="filtrarCatalogo('Serie', 'SÉRIES')" class="absolute bottom-4 right-6 hover:text-white transition-colors">SÉRIES</button>
-                    </nav>
-                </div>
-            `;
-        }
-
-        // TELA 2: GRADE DE POSTERS (Estilo Imagem 2)
-        function renderGradeObras(listaFiltrada, tituloSessao) {
-            telaAtual = 'grid';
-            const content = document.getElementById('app-content');
-            content.className = "w-full flex flex-col items-start animate-fadeIn";
+            const urlParams = new URLSearchParams(window.location.search);
+            const obraId = urlParams.get('obra');
             
-            let gridHTML = `
-                <div class="w-full flex justify-between items-center mb-6 px-1">
-                    <h2 class="mono text-sm tracking-widest uppercase font-bold text-neutral-200">${tituloSessao} <span class="text-xs text-neutral-500 font-normal">${listaFiltrada.length} OBRAS</span></h2>
-                    <button onclick="voltarParaHome()" class="mono text-xs text-neutral-500 hover:text-white">✕ VOLTAR</button>
-                </div>
-            `;
-
-            if (listaFiltrada.length === 0) {
-                gridHTML += `<p class="mono text-xs text-neutral-600 w-full text-center py-12">NENHUMA OBRA ENCONTRADA :(</p>`;
+            if(obraId && bancoDadosObras.find(o => o.id_obra === obraId)) {
+                history.replaceState({ nav: 'home' }, '', window.location.pathname);
+                navegarPara('modal', obraId);
             } else {
-                gridHTML += `<div class="w-full grid grid-cols-3 gap-3 px-1">`;
-                listaFiltrada.forEach(obra => {
-                    gridHTML += `
-                        <div onclick="abrirDetalhes('${obra.id_obra}')" class="flex flex-col cursor-pointer group active:scale-95 transition-transform">
-                            <div class="aspect-[2/3] w-full bg-neutral-900 rounded-lg overflow-hidden border border-neutral-900 group-hover:border-neutral-700 transition-colors">
-                                <img src="${obra.capa_poster}" alt="${obra.titulo}" class="w-full h-full object-cover opacity-90 group-hover:opacity-100 transition-opacity" onerror="this.src='https://placehold.co/300x450/111/fff?text=Sem+Foto'">
-                            </div>
-                            <h3 class="text-xs tracking-tight text-neutral-300 mt-1.5 truncate leading-tight">${obra.titulo}</h3>
-                        </div>
-                    `;
-                });
-                gridHTML += `</div>`;
+                history.replaceState({ nav: 'home' }, '', window.location.pathname);
+                processarEstadoVisual('home');
             }
-            content.innerHTML = gridHTML;
-        }
-
-        // FUNÇÃO DE FILTRAGEM DOS BOTÕES DA HOME
-        function filtrarCatalogo(tipoFiltro, label) {
-            if (tipoFiltro === 'todos') {
-                renderGradeObras(obras, label);
-            } else if (tipoFiltro === 'Animacao') {
-                // Filtra tanto se for o Tipo "Animacao" quanto se tiver "Animação" no gênero
-                const filtradas = obras.filter(o => o.tipo === 'Animacao' || o.tipo === 'Animação' || limparTexto(o.generos).includes('animacao'));
-                renderGradeObras(filtradas, label);
-            } else {
-                const filtradas = obras.filter(o => o.tipo === tipoFiltro);
-                renderGradeObras(filtradas, label);
-            }
-        }
-
-        // TELA 3: LISTAGEM DE METADADOS (Gêneros, Países, Diretores - Estilo Imagem 3)
-        function mostrarListaMetadata(campo, tituloSessao) {
-            telaAtual = 'list';
-            const content = document.getElementById('app-content');
-            content.className = "w-full flex flex-col items-start animate-fadeIn";
-
-            // Processamento inteligente dos dados
-            let contagem = {};
-            obras.forEach(obra => {
-                let itens = [];
-                if (campo === 'generos') {
-                    // Divide por vírgulas se houver múltiplos gêneros na linha
-                    itens = obra.generos ? obra.generos.split(',').map(s => s.trim()) : [];
-                } else {
-                    if (obra[campo]) itens.push(obra[campo].trim());
-                }
-
-                itens.forEach(item => {
-                    if (!item) return;
-                    // Padronização para contagem correta (ex: Ação e Acao contam juntos no cérebro)
-                    let chaveExibicao = item; 
-                    let chaveLimpa = limparTexto(item);
-                    
-                    if (!contagem[chaveLimpa]) {
-                        contagem[chaveLimpa] = { nome: chaveExibicao, total: 0 };
-                    }
-                    contagem[chaveLimpa].total += 1;
-                });
-            });
-
-            // Converte o mapa para um array ordenado por quantidade
-            let listaOrdenada = Object.values(contagem).sort((a, b) => b.total - a.total);
-
-            let listHTML = `
-                <div class="w-full flex justify-between items-center mb-6 px-2">
-                    <h2 class="mono text-sm tracking-widest uppercase font-bold text-neutral-200">${tituloSessao} <span class="text-xs text-neutral-500 font-normal">${listaOrdenada.length}</span></h2>
-                    <button onclick="voltarParaHome()" class="mono text-xs text-neutral-500 hover:text-white">✕ VOLTAR</button>
-                </div>
-                <div class="w-full px-2 grid grid-cols-2 gap-x-8 gap-y-3 font-mono text-xs tracking-wider uppercase">
-            `;
-
-            listaOrdenada.forEach(item => {
-                listHTML += `
-                    <div onclick="filtrarPorMetadata('${campo}', '${item.nome}')" class="flex justify-between py-1.5 border-b border-neutral-950 hover:border-neutral-800 cursor-pointer text-neutral-400 hover:text-white transition-colors active:translate-x-1 transition-transform">
-                        <span>${item.nome}</span>
-                        <span class="text-neutral-600">${item.total}</span>
-                    </div>
-                `;
-            });
-
-            listHTML += `</div>`;
-            content.innerHTML = listHTML;
-        }
-
-        // Filtrar catálogo baseado na escolha da lista (Ex: Clicou em Japão)
-        function filtrarPorMetadata(campo, valor) {
-            const valorLimpo = limparTexto(valor);
-            const filtradas = obras.filter(obra => {
-                if (campo === 'generos') {
-                    return limparTexto(obra.generos).includes(valorLimpo);
-                }
-                return limparTexto(obra[campo]) === valorLimpo;
-            });
-            renderGradeObras(filtradas, valor.toUpperCase());
-        }
-
-        // TELA 4 e 5: PÁGINA DE DETALHES DA OBRA (Estilo Imagens 4 e 5)
-        function abrirDetalhes(idObra) {
-            const obra = obras.find(o => o.id_obra == idObra);
-            if (!obra) return;
-
-            telaAtual = 'detail';
-            const content = document.getElementById('app-content');
-            content.className = "w-full flex flex-col items-center animate-fadeIn text-left font-serif px-1";
-
-            // Montagem dos Badges de Gêneros clicáveis
-            let badgesGeneros = "";
-            if (obra.generos) {
-                obra.generos.split(',').forEach(g => {
-                    let nomeG = g.trim();
-                    badgesGeneros += `<span onclick="filtrarPorMetadata('generos', '${nomeG}')" class="inline-block border border-neutral-700 rounded-full px-2.5 py-0.5 text-[10px] uppercase font-sans tracking-wider mr-1.5 mb-1.5 cursor-pointer hover:bg-neutral-900 transition-colors text-neutral-300">${nomeG}</span>`;
-                });
-            }
-
-            // Metadados básicos
-            const diretorTexto = obra.diretor ? `por ${obra.diretor}` : '';
-            const metadataLinha = [obra.ano, obra.classificacao ? `${obra.classificacao} anos` : '', obra.pais, obra.duracao_ou_status].filter(Boolean).join('  |  ');
-
-            let detailHTML = `
-                <div class="w-full flex justify-end mb-3">
-                    <button onclick="voltarParaGradeOuHome()" class="mono text-2xl font-light text-neutral-500 hover:text-white transition-colors">✕</button>
-                </div>
-
-                <div class="w-full aspect-[16/9] bg-neutral-900 rounded-xl overflow-hidden mb-6 border border-neutral-900">
-                    <img src="${obra.capa_banner}" alt="Banner" class="w-full h-full object-cover opacity-80" onerror="this.src='https://placehold.co/800x450/111/fff?text=${obra.titulo}'">
-                </div>
-
-                <div class="w-full flex flex-col items-start border-b border-neutral-900 pb-4 mb-4">
-                    <h2 class="text-3xl tracking-tight leading-tight mb-0.5">${obra.titulo}</h2>
-                    <p class="text-xs italic text-neutral-400 font-sans tracking-wide mb-3">${diretorTexto}</p>
-                    
-                    <p class="mono text-[10px] text-neutral-500 tracking-wider uppercase mb-3">${metadataLinha}</p>
-                    
-                    <div class="flex flex-wrap items-center">
-                        <span class="inline-block bg-neutral-900 rounded px-2 py-0.5 text-[10px] uppercase font-sans font-bold tracking-wider mr-2 mb-1.5 text-neutral-400">${obra.tipo}</span>
-                        ${badgesGeneros}
-                    </div>
-
-                    ${obra.titulos_alternativos ? `
-                    <p class="text-[11px] font-sans text-neutral-500 mt-2 leading-relaxed">
-                        <strong class="text-neutral-400 font-medium">Outros títulos:</strong><br>${obra.titulos_alternativos.split(',').join('<br>')}
-                    </p>` : ''}
-                </div>
-
-                <div class="w-full text-xs text-neutral-300 font-sans leading-relaxed tracking-wide mb-6 whitespace-pre-line">
-                    ${obra.sinopse || 'Nenhuma sinopse disponível...'}
-                </div>
-            `;
-
-            // SEÇÃO DE LINKS: Se for FILME, exibe direto na tela
-            if (limparTexto(obra.tipo) === 'filme') {
-                detailHTML += `
-                    <div class="w-full grid grid-cols-2 gap-8 font-sans border-t border-neutral-950 pt-4 mt-2">
-                        <div class="flex flex-col items-start">
-                            <h4 class="text-xs font-serif underline underline-offset-4 tracking-wider mb-3 text-neutral-200">Assistir</h4>
-                            ${obra.filme_assistir_leg ? `<a href="${obra.filme_assistir_leg}" target="_blank" class="w-full text-center border border-neutral-700 hover:border-white rounded-full py-2 text-xs font-medium tracking-wide mb-2 transition-all active:scale-95 text-neutral-300 hover:text-white">Dublado</a>` : ''}
-                            ${obra.filme_assistir_dub ? `<a href="${obra.filme_assistir_dub}" target="_blank" class="w-full text-center border border-neutral-700 hover:border-white rounded-full py-2 text-xs font-medium tracking-wide transition-all active:scale-95 text-neutral-300 hover:text-white">Legendado</a>` : ''}
-                        </div>
-                        <div class="flex flex-col items-start">
-                            <h4 class="text-xs font-serif underline underline-offset-4 tracking-wider mb-3 text-neutral-200">Download</h4>
-                            ${obra.filme_down_gofile_leg || obra.filme_down_transfer_leg ? `
-                                <div class="w-full text-[10px] text-neutral-500 uppercase font-mono tracking-widest text-center mb-1">Legendado</div>
-                                <div class="w-full grid grid-cols-2 gap-1.5 mb-3">
-                                    ${obra.filme_down_gofile_leg ? `<a href="${obra.filme_down_gofile_leg}" target="_blank" class="text-center border border-neutral-800 hover:border-neutral-500 rounded-full py-1 text-[10px] transition-colors">Gofile</a>` : ''}
-                                    ${obra.filme_down_transfer_leg ? `<a href="${obra.filme_down_transfer_leg}" target="_blank" class="text-center border border-neutral-800 hover:border-neutral-500 rounded-full py-1 text-[10px] transition-colors">Transfer</a>` : ''}
-                                </div>
-                            ` : ''}
-                            ${obra.filme_down_gofile_dub || obra.filme_down_transfer_dub ? `
-                                <div class="w-full text-[10px] text-neutral-500 uppercase font-mono tracking-widest text-center mb-1">Dublado</div>
-                                <div class="w-full grid grid-cols-2 gap-1.5">
-                                    ${obra.filme_down_gofile_dub ? `<a href="${obra.filme_down_gofile_dub}" target="_blank" class="text-center border border-neutral-800 hover:border-neutral-500 rounded-full py-1 text-[10px] transition-colors">Gofile</a>` : ''}
-                                    ${obra.filme_down_transfer_dub ? `<a href="${obra.filme_down_transfer_dub}" target="_blank" class="text-center border border-neutral-800 hover:border-neutral-500 rounded-full py-1 text-[10px] transition-colors">Transfer</a>` : ''}
-                                </div>
-                            ` : ''}
-                        </div>
-                    </div>
-                `;
-            } else {
-                // SEÇÃO DE LINKS: Se for Dorama/Anime/Série, filtra e agrupa os episódios da Aba 2
-                const epsDaObra = episodios.filter(e => e.id_obra_relacionada == obra.id_obra);
-                
-                // Agrupa por Temporada
-                let temporadasMap = {};
-                epsDaObra.forEach(ep => {
-                    let t = ep.temporada || "1";
-                    if (!temporadasMap[t]) temporadasMap[t] = [];
-                    temporadasMap[t].push(ep);
-                });
-
-                // Ordena episódios dentro de cada temporada
-                for (let t in temporadasMap) {
-                    temporadasMap[t].sort((a, b) => parseInt(a.numero_episodio) - parseInt(b.numero_episodio));
-                }
-
-                let listaTemporadas = Object.keys(temporadasMap).sort((a, b) => parseInt(a) - parseInt(b));
-
-                if (listaTemporadas.length === 0) {
-                    detailHTML += `<p class="mono text-[10px] text-neutral-600 border-t border-neutral-950 pt-4 w-full text-center">NENHUM EPISÓDIO LISTADO ATÉ O MOMENTO.</p>`;
-                } else {
-                    detailHTML += `<div class="w-full border-t border-neutral-900 pt-4 font-sans">`;
-                    
-                    listaTemporadas.forEach(temp => {
-                        detailHTML += `
-                            <h4 class="font-serif text-xl tracking-tight mb-4 mt-2 text-neutral-100">Temporada ${temp}</h4>
-                            <div class="w-full flex flex-col gap-5 mb-6">
-                        `;
-
-                        temporadasMap[temp].forEach(ep => {
-                            const nomeEpisodio = ep.titulo_episodio || `EP.${ep.numero_episodio.toString().padStart(2, '0')} | Capítulo`;
-                            
-                            detailHTML += `
-                                <div class="w-full bg-neutral-950/40 border border-neutral-950 rounded-lg p-3 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-                                    <div class="flex items-center gap-2">
-                                        <span class="mono text-[11px] text-neutral-500">▶</span>
-                                        <span class="text-xs font-medium text-neutral-300">${nomeEpisodio}</span>
-                                    </div>
-                                    
-                                    <div class="flex flex-wrap items-center gap-x-4 gap-y-2 text-[11px] text-neutral-400">
-                                        ${ep.assistir_leg || ep.assistir_dub ? `
-                                            <div class="flex items-center gap-1.5 border-r border-neutral-800 pr-3">
-                                                <span class="text-[10px] text-neutral-600 uppercase font-mono">Ver:</span>
-                                                ${ep.assistir_leg ? `<a href="${ep.assistir_leg}" target="_blank" class="hover:text-white underline">Leg</a>` : ''}
-                                                ${ep.assistir_dub ? `<a href="${ep.assistir_dub}" target="_blank" class="hover:text-white underline">Dub</a>` : ''}
-                                            </div>
-                                        ` : ''}
-                                        
-                                        ${ep.down_gofile_leg || ep.down_transfer_leg ? `
-                                            <div class="flex items-center gap-1.5 ${ep.down_gofile_dub || ep.down_transfer_dub ? 'border-r border-neutral-800 pr-3' : ''}">
-                                                <span class="text-[10px] text-neutral-600 uppercase font-mono">Leg:</span>
-                                                ${ep.down_gofile_leg ? `<a href="${ep.down_gofile_leg}" target="_blank" class="hover:text-white">Gofile</a>` : ''}
-                                                ${ep.down_transfer_leg ? `<a href="${ep.down_transfer_leg}" target="_blank" class="hover:text-white">Transfer</a>` : ''}
-                                            </div>
-                                        ` : ''}
-
-                                        ${ep.down_gofile_dub || ep.down_transfer_dub ? `
-                                            <div class="flex items-center gap-1.5">
-                                                <span class="text-[10px] text-neutral-600 uppercase font-mono">Dub:</span>
-                                                ${ep.down_gofile_dub ? `<a href="${ep.down_gofile_dub}" target="_blank" class="hover:text-white">Gofile</a>` : ''}
-                                                ${ep.down_transfer_dub ? `<a href="${ep.down_transfer_dub}" target="_blank" class="hover:text-white">Transfer</a>` : ''}
-                                            </div>
-                                        ` : ''}
-                                    </div>
-                                </div>
-                            `;
-                        });
-
-                        detailHTML += `</div>`;
-                    });
-
-                    detailHTML += `</div>`;
-                }
-            }
-
-            content.innerHTML = detailHTML;
-            window.scrollTo({ top: 0, behavior: 'smooth' });
-        }
-
-        // CONTROLADORES DE RETORNO DAS TELAS
-        function voltarParaHome() {
-            showHome();
-        }
-
-        function voltarParaGradeOuHome() {
-            // Se o usuário veio de uma busca ou grade, ele volta para ela. Caso contrário, vai para a Home.
-            if (document.getElementById('searchBar').value.trim() !== '') {
-                realizarBusca(document.getElementById('searchBar').value);
-            } else {
-                showHome();
-            }
-        }
-
-        // ESCUTA DA BARRA DE BUSCA EM TEMPO REAL
-        function realizarBusca(termo) {
-            if (!termo || termo.trim() === "") {
-                if(telaAtual !== 'home') showHome();
-                return;
-            }
-            
-            const termoLimpo = limparTexto(termo);
-            
-            // Varredura ultra inteligente por múltiplos campos de texto combinados
-            const filtrados = obras.filter(obra => {
-                return limparTexto(obra.titulo).includes(termoLimpo) ||
-                       limparTexto(obra.titulos_alternativos).includes(termoLimpo) ||
-                       limparTexto(obra.diretor).includes(termoLimpo) ||
-                       limparTexto(obra.generos).includes(termoLimpo) ||
-                       limparTexto(obra.pais).includes(termoLimpo) ||
-                       limparTexto(obra.tipo).includes(termoLimpo);
-            });
-            
-            renderGradeObras(filtrados, `RESULTADOS PARA "${termo.toUpperCase()}"`);
-        }
-
-        document.getElementById('searchBar').addEventListener('input', function(e) {
-            realizarBusca(e.target.value);
         });
 
-        // DISPARO INICIAL
-        inicializarAcervo();
+        async function carregarBancoDeDados() {
+            try {
+                const [resObras, resEps] = await Promise.all([
+                    fetch(URL_OBRAS).then(r => r.text()),
+                    fetch(URL_EPISODIOS).then(r => r.text())
+                ]);
+
+                const configPapa = { header: true, skipEmptyLines: true, transformHeader: h => h.trim() };
+                
+                // Filtra apenas linhas que tenham ID e Título
+                bancoDadosObras = Papa.parse(resObras, configPapa).data.filter(o => o.id_obra && o.titulo);
+                
+                const arrEps = Papa.parse(resEps, configPapa).data.filter(e => e.id_obra_relacionada);
+                arrEps.forEach(ep => {
+                    if (!bancoEpisodios[ep.id_obra_relacionada]) bancoEpisodios[ep.id_obra_relacionada] = [];
+                    bancoEpisodios[ep.id_obra_relacionada].push(ep);
+                });
+            } catch (erro) {
+                console.error(erro);
+                document.getElementById("subtextoDinamicoBusca").textContent = "ERRO AO CONECTAR À PLANILHA.";
+            }
+        }
+
+        window.addEventListener('popstate', (event) => {
+            document.body.classList.remove("no-scroll");
+            document.getElementById("modalObra").classList.add("hidden");
+            fecharMiniCinema();
+
+            if (!event.state) {
+                processarEstadoVisual('home');
+                return;
+            }
+            processarEstadoVisual(event.state.nav, event.state.param);
+        });
+
+        function navegarPara(destino, parametro = null) {
+            document.body.classList.remove("no-scroll");
+            document.getElementById("modalObra").classList.add("hidden");
+            fecharMiniCinema();
+            
+            let novaUrl = window.location.pathname;
+            if (destino === 'modal') novaUrl += `?obra=${parametro}`;
+            
+            let paramSalvo = parametro;
+            if(typeof parametro === 'object' && parametro !== null) {
+                paramSalvo = `${parametro.coluna}|${parametro.valor}`;
+            }
+
+            history.pushState({ nav: destino, param: paramSalvo }, '', novaUrl);
+            processarEstadoVisual(destino, paramSalvo);
+        }
+
+        function fecharModalPeloBotao() { history.back(); }
+
+        function limparTexto(texto) {
+            if(!texto) return "";
+            return texto.toString().normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/[-_]/g, " ").toLowerCase().trim();
+        }
+
+        function processarEstadoVisual(nav, param) {
+            if (nav === 'modal') {
+                abrirModalVisual(param);
+                return;
+            }
+
+            document.getElementById("modalObra").classList.add("hidden");
+            document.body.classList.remove("no-scroll");
+
+            document.getElementById("viewHome").classList.add("hidden");
+            document.getElementById("viewCatalogo").classList.add("hidden");
+            document.getElementById("viewListagem").classList.add("hidden");
+            document.getElementById("footerTexto").classList.add("hidden");
+            document.getElementById("subtextoDinamicoBusca").classList.add("hidden");
+
+            if (nav === 'home') {
+                document.getElementById("viewHome").classList.remove("hidden");
+                document.getElementById("footerTexto").classList.remove("hidden");
+                document.getElementById("subtextoDinamicoBusca").classList.remove("hidden");
+                document.getElementById("campoPesquisa").value = "";
+                document.getElementById("subtextoDinamicoBusca").textContent = `${bancoDadosObras.length} OBRAS AO TOTAL...`;
+            } 
+            else if (nav === 'catalogo') {
+                document.getElementById("viewCatalogo").classList.remove("hidden");
+                let filtradas = param === 'Todos' ? [...bancoDadosObras] : bancoDadosObras.filter(o => limparTexto(o.tipo) === limparTexto(param));
+                filtradas = ordenarDecrescente(filtradas);
+                document.getElementById("tituloAbaCatalogo").innerHTML = `${param.toUpperCase()} <span>${filtradas.length} OBRAS</span>`;
+                renderizarGridObras(filtradas);
+            }
+            else if (nav === 'filtro') {
+                document.getElementById("viewCatalogo").classList.remove("hidden");
+                
+                let partes = param.split('|');
+                let coluna = partes[0];
+                let valor = partes[1];
+
+                let filtradas = bancoDadosObras.filter(o => {
+                    let alvo = (o[coluna] || "");
+                    return limparTexto(alvo).includes(limparTexto(valor));
+                });
+                filtradas = ordenarDecrescente(filtradas);
+                document.getElementById("tituloAbaCatalogo").innerHTML = `${valor.toUpperCase()} <span>${filtradas.length} OBRAS</span>`;
+                renderizarGridObras(filtradas);
+            }
+            else if (nav === 'lista') {
+                document.getElementById("viewListagem").classList.remove("hidden");
+                renderizarListaGenerica(param);
+            }
+            else if (nav === 'busca') {
+                document.getElementById("viewCatalogo").classList.remove("hidden");
+                document.getElementById("campoPesquisa").value = param;
+                executarBusca(param);
+            }
+        }
+
+        // ==========================================================================
+        // BUSCA INTELIGENTE
+        // ==========================================================================
+        function configurarBuscadorInteligente() {
+            const input = document.getElementById("campoPesquisa");
+            const form = document.getElementById("formBusca");
+            let timeoutBusca;
+
+            input.addEventListener("input", (e) => {
+                let termo = e.target.value.trim();
+                clearTimeout(timeoutBusca);
+                timeoutBusca = setTimeout(() => {
+                    if(termo === "") { navegarPara('home'); return; }
+                    history.pushState({ nav: 'busca', param: termo }, '', window.location.pathname);
+                    processarEstadoVisual('busca', termo);
+                }, 300); 
+            });
+
+            form.addEventListener("submit", (e) => {
+                e.preventDefault();
+                input.blur(); 
+            });
+        }
+
+        function executarBusca(termo) {
+            let termoLimpo = limparTexto(termo);
+            let achados = bancoDadosObras.filter(o => {
+                return limparTexto(o.titulo).includes(termoLimpo) || 
+                       limparTexto(o.titulos_alternativos).includes(termoLimpo) || 
+                       limparTexto(o.diretor).includes(termoLimpo) || 
+                       limparTexto(o.generos).includes(termoLimpo) || 
+                       limparTexto(o.ano).includes(termoLimpo) || 
+                       limparTexto(o.tipo).includes(termoLimpo) || 
+                       limparTexto(o.pais).includes(termoLimpo);
+            });
+            achados = ordenarDecrescente(achados);
+            document.getElementById("tituloAbaCatalogo").innerHTML = `BUSCA: ${termo.toUpperCase()} <span>${achados.length} OBRAS</span>`;
+            renderizarGridObras(achados);
+        }
+
+        function renderizarGridObras(obras) {
+            const grid = document.getElementById("gridObras");
+            grid.innerHTML = "";
+            obras.forEach(obra => {
+                const item = document.createElement("div");
+                item.className = `item-obra`;
+                item.onclick = () => navegarPara('modal', obra.id_obra);
+                // Fallback elegante caso a imagem não carregue
+                item.innerHTML = `<img class="poster-imagem" src="${obra.capa_poster}" alt="${obra.titulo}" onerror="this.src='https://placehold.co/300x450/222/fff?text=Sem+Capa'">`;
+                grid.appendChild(item);
+            });
+        }
+
+        function renderizarListaGenerica(colunaTarget) {
+            const container = document.getElementById("containerListagem");
+            container.innerHTML = "";
+            let mapaDados = {};
+            
+            let nomeAba = "LISTA";
+            if(colunaTarget === 'generos') nomeAba = "GÊNEROS";
+            if(colunaTarget === 'diretor') nomeAba = "DIRETORES";
+            if(colunaTarget === 'pais') nomeAba = "PAÍSES";
+
+            bancoDadosObras.forEach(obra => {
+                let cell = obra[colunaTarget] || "";
+                cell.split(",").forEach(txt => {
+                    let nome = txt.trim();
+                    if(nome) {
+                        // Padroniza a contagem ignorando maiúsculas
+                        let chave = nome.toUpperCase();
+                        if(!mapaDados[chave]) mapaDados[chave] = {nomeOriginal: nome, qtd: 0};
+                        mapaDados[chave].qtd += 1;
+                    }
+                });
+            });
+
+            let arr = Object.values(mapaDados);
+            arr.sort((a,b) => b.qtd - a.qtd || a.nomeOriginal.localeCompare(b.nomeOriginal));
+            
+            document.getElementById("tituloAbaListagem").innerHTML = `${nomeAba} <span>${arr.length}</span>`;
+            arr.forEach(item => {
+                container.innerHTML += `
+                    <div class="linha-genero" onclick="navegarPara('filtro', {coluna: '${colunaTarget}', valor: '${item.nomeOriginal.replace(/'/g, "\\'")}'})">
+                        <div class="nome-item-lista">${item.nomeOriginal}</div>
+                        <div class="qtd-item-lista">${item.qtd}</div>
+                    </div>`;
+            });
+        }
+
+        function configurarCompartilhamento(idObra, tituloObra) {
+            const btn = document.getElementById("btnCompartilhar");
+            btn.onclick = async () => {
+                let linkShare = window.location.href; 
+                if (navigator.share) {
+                    try {
+                        await navigator.share({ title: `melove: ${tituloObra}`, url: linkShare });
+                    } catch (err) { console.log('Cancelado'); }
+                } else {
+                    navigator.clipboard.writeText(linkShare);
+                    alert("Link copiado para a área de transferência!");
+                }
+            };
+        }
+
+        function clicarTagCategoria(cat) { navegarPara('catalogo', cat); }
+        function clicarTagFiltro(coluna, valor) { navegarPara('filtro', {coluna: coluna, valor: valor}); }
+
+        // ==========================================================================
+        // MONTAGEM DA TELA DE DETALHES (FILMES, SÉRIES, ETC)
+        // ==========================================================================
+        function abrirModalVisual(id) {
+            const obra = bancoDadosObras.find(o => o.id_obra === id);
+            if(!obra) return;
+            
+            fecharMiniCinema();
+            configurarCompartilhamento(id, obra.titulo);
+
+            const cat = limparTexto(obra.tipo);
+            let html = "";
+            let corBadge = obterCorClassificacao(obra.classificacao || "");
+
+            let sinopseHtml = `<div class="sinopse-modal">${obra.sinopse || ""}</div>`;
+            
+            let tagsHtml = `<div class="container-tags-generos">`;
+            tagsHtml += `<span class="tag-modal bold" onclick="clicarTagCategoria('${obra.tipo.replace(/'/g, "\\'")}')">${obra.tipo}</span> `;
+            let generos = obra.generos || "";
+            generos.split(",").forEach(g => { 
+                let gen = g.trim();
+                if(gen) tagsHtml += `<span class="tag-modal" onclick="clicarTagFiltro('generos', '${gen.replace(/'/g, "\\'")}')">${gen}</span> `; 
+            });
+            tagsHtml += `</div>`;
+            
+            let altTitulos = (obra.titulos_alternativos || "").replace(/\\n/g, '<br>');
+            let outrosTitulosHtml = altTitulos ? `<div class="bloco-outros-titulos"><div class="label-outros-titulos">Outros títulos:</div><div class="conteudo-outros-titulos">${altTitulos}</div></div>` : "";
+
+            let linkArtistaHtml = obra.diretor ? `<div class="autor-diretor-modal" onclick="clicarTagFiltro('diretor', '${obra.diretor.replace(/'/g, "\\'")}')">por ${obra.diretor}</div>` : "";
+            
+            let duracaoOuStatus = obra.duracao_ou_status ? ` | ${obra.duracao_ou_status}` : "";
+
+            // LAYOUT GERAL
+            html = `
+            <div class="header-modal-filme">
+                <img class="banner-obra-modal" src="${obra.capa_banner || obra.capa_poster}" alt="${obra.titulo}" id="modalImagemFicha">
+                <div class="titulo-obra-modal">${obra.titulo}</div>
+                ${linkArtistaHtml}
+                <div class="linha-tecnica">
+                    <span>${obra.ano || ""} | <span class="badge-classificacao" style="background:${corBadge}">${obra.classificacao || ""}</span> | ${obra.pais || ""}${duracaoOuStatus}</span>
+                </div>
+                ${tagsHtml}
+                ${outrosTitulosHtml}
+            </div>
+            ${sinopseHtml}
+            `;
+
+            // SE FOR FILME (Puxa os links diretos da aba principal)
+            if (cat === 'filme' || cat === 'animacao' || cat === 'curta' || cat === 'documentario') {
+                let temLeg = obra.filme_assistir_leg || obra.filme_down_gofile_leg || obra.filme_down_transfer_leg;
+                let temDub = obra.filme_assistir_dub || obra.filme_down_gofile_dub || obra.filme_down_transfer_dub;
+
+                if(temLeg || temDub) {
+                    html += `<div class="bloco-links-filme">`;
+                    if(obra.filme_assistir_leg) html += `<span class="link-streaming" onclick="dispararMiniCinema('${obra.filme_assistir_leg}', this, 'filme_${id}_leg')">Legendado</span>`;
+                    if(obra.filme_assistir_leg && obra.filme_assistir_dub) html += `<div class="borboleta-mini-area"><pre style="font-family:monospace; font-size:3px; line-height:1; color:var(--texto-mutado);">${separatorASCII}</pre></div>`;
+                    if(obra.filme_assistir_dub) html += `<span class="link-streaming" onclick="dispararMiniCinema('${obra.filme_assistir_dub}', this, 'filme_${id}_dub')">Dublado</span>`;
+                    html += `</div>`;
+                }
+
+            } 
+            // SE FOR SÉRIE/DORAMA/ANIME (Puxa os episódios da aba 2)
+            else {
+                let eps = bancoEpisodios[id] || [];
+                
+                if(eps.length > 0) {
+                    html += `
+                    <div class="container-temporadas">
+                        <div class="titulo-temporada-gatilho">
+                            Episódios
+                            <div style="font-family:monospace; font-size:3px; line-height:1; color:var(--texto-mutado);">${separatorASCII}</div>
+                        </div>
+                        <div class="lista-episodios">
+                    `;
+                    
+                    eps.forEach(ep => {
+                        let kLeg = `serie_${id}_ep${ep.numero_episodio}_leg`;
+                        let kDub = `serie_${id}_ep${ep.numero_episodio}_dub`;
+                        let vistos = { leg: verificarSeFoiVisto(kLeg), dub: verificarSeFoiVisto(kDub) };
+
+                        let epLinksHtml = "";
+                        if(ep.assistir_leg) epLinksHtml += `<span class="ep-link-btn ${vistos.leg?'visto':''}" onclick="dispararMiniCinema('${ep.assistir_leg}', this, '${kLeg}')">Leg</span>`;
+                        if(ep.assistir_dub) epLinksHtml += `<span class="ep-link-btn ${vistos.dub?'visto':''}" onclick="dispararMiniCinema('${ep.assistir_dub}', this, '${kDub}')">Dub</span>`;
+
+                        let nomeEp = ep.titulo_episodio || `Episódio ${ep.numero_episodio}`;
+
+                        html += `
+                        <div class="item-episodio">
+                            <div class="ep-info-esquerda">
+                                <div class="ep-titulo-linha"><span class="ep-num">EP.${ep.numero_episodio} |</span> ${nomeEp}</div>
+                            </div>
+                            <div class="ep-links-direita flex gap-3">
+                                ${epLinksHtml}
+                            </div>
+                        </div>
+                        `;
+                    });
+
+                    html += `</div></div>`;
+                }
+            }
+
+            document.getElementById("modalConteudoDinamico").innerHTML = html;
+            document.getElementById("modalObra").classList.remove("hidden");
+            document.body.classList.add("no-scroll");
+        }
+
+        function dispararMiniCinema(url, elClick, storageKey) {
+            if(!url || url==='#' || url==="" || url==="undefined") return;
+            marcarComoVisto(elClick, storageKey);
+            const w = document.getElementById("wrapperPlayerVideo");
+            const i = document.getElementById("iframePlayerVideo");
+            const img = document.getElementById("modalImagemFicha");
+            i.src = url;
+            w.classList.remove("hidden");
+            if(img) img.classList.add("hidden");
+            w.scrollIntoView({behavior: 'smooth', block: 'start'});
+        }
+
+        function fecharMiniCinema() {
+            const w = document.getElementById("wrapperPlayerVideo");
+            const i = document.getElementById("iframePlayerVideo");
+            const img = document.getElementById("modalImagemFicha");
+            if(i) i.src = "";
+            if(w) w.classList.add("hidden");
+            if(img) img.classList.remove("hidden");
+        }
+
+        function marcarComoVisto(el, key) {
+            if(!el) return;
+            el.classList.add("visto");
+            localStorage.setItem(key, "true");
+        }
+
+        function verificarSeFoiVisto(key) { return localStorage.getItem(key) === "true"; }
+
+        function obterCorClassificacao(c) {
+            c = c.toString().toLowerCase().trim();
+            if(c === 'livre') return 'var(--cl-livre)';
+            if(c === '10') return 'var(--cl-10)';
+            if(c === '12') return 'var(--cl-12)';
+            if(c === '14') return 'var(--cl-14)';
+            if(c === '16') return 'var(--cl-16)';
+            if(c === '18') return 'var(--cl-18)';
+            return 'var(--linha-fina)';
+        }
     </script>
 </body>
 </html>
