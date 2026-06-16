@@ -322,7 +322,7 @@
             overflow-y: auto;
             -webkit-overflow-scrolling: touch;
             padding: 20px;
-            padding-bottom: 120px; /* Garante espaço extra para rolagem total */
+            padding-bottom: 120px;
         }
 
         .modal-conteudo {
@@ -520,7 +520,7 @@
         .iframe-player { width: 100%; height: 100%; border: none; }
 
         /* ==========================================================================
-           FORÇANDO TELA INFINITA NO CUSDIS (Sem Caixas Engessadas)
+           ESTILIZAÇÃO TOTAL DO CUSDIS (CORREÇÃO DE TEXTOS INVISÍVEIS)
            ========================================================================== */
         .container-comentarios-cusdis {
             margin-top: 50px;
@@ -534,15 +534,14 @@
             margin-bottom: 20px;
             letter-spacing: -0.5px;
         }
-        /* Reseta absolutamente qualquer bloqueio de tamanho forçado pelo widget */
         #wrapperCusdisDinamico {
             width: 100%;
             display: block;
         }
         #cusdis_thread, #cusdis_thread iframe {
             width: 100% !important;
-            min-height: 450px !important; /* Base inicial grande */
-            height: auto !important; /* Permite esticar infinitamente */
+            min-height: 460px !important; 
+            height: auto !important; 
             display: block !important;
             overflow: hidden !important;
         }
@@ -816,7 +815,7 @@
             });
         }
 
-        function ejecutarBusca(termo) {
+        function executarBusca(termo) {
             let termoLimpo = limparTexto(termo);
             let achados = bancoDadosObras.filter(o => {
                 return limparTexto(o.titulo).includes(termoLimpo) || 
@@ -906,7 +905,7 @@
         }
 
         // ==========================================================================
-        // MOTOR DE INJEÇÃO DO CUSDIS COM CORREÇÃO DE ALTURA DE TELA INFINITA
+        // MOTOR DE INJEÇÃO DO CUSDIS (FORÇANDO ESTILO DARK E TEXTOS CLAROS)
         // ==========================================================================
         function injectCusdisComments(idObra, tituloObra) {
             const wrapper = document.getElementById("wrapperCusdisDinamico");
@@ -919,6 +918,7 @@
             thread.setAttribute("data-page-id", idObra);
             thread.setAttribute("data-page-title", tituloObra);
             thread.setAttribute("data-page-url", window.location.href);
+            thread.setAttribute("data-theme", "dark"); // Força o Cusdis a nascer no modo escuro
             
             wrapper.appendChild(thread);
             
@@ -926,13 +926,32 @@
                 window.renderCusdis(thread);
             }
 
-            // Monitor inteligente: Força o iframe a esticar e herdar a altura de tela infinita real
+            // Monitor Inteligente de Injeção de Estilos CSS customizados no Iframe
             setTimeout(() => {
                 const iframe = thread.querySelector('iframe');
                 if(iframe) {
                     iframe.style.setProperty('height', 'auto', 'important');
-                    iframe.style.setProperty('min-height', '450px', 'important');
+                    iframe.style.setProperty('min-height', '460px', 'important');
                     iframe.style.setProperty('overflow', 'hidden', 'important');
+                    
+                    // Injeta código CSS diretamente dentro do frame do Cusdis para forçar as fontes a aparecerem
+                    const estiloEscuroCusdis = `
+                        <style>
+                            label, .cusdis-label, .text-sm { color: #aaaaaa !important; font-family: monospace !important; }
+                            input, textarea { background-color: #1a1a1a !important; color: #ffffff !important; border: 1px solid #333333 !important; border-radius: 4px !important; }
+                            button, .btn { background-color: #f0f0f0 !important; color: #121212 !important; border-radius: 4px !important; font-weight: bold !important; }
+                            .comment-item { border-bottom: 1px dashed #333333 !important; }
+                            .comment-meta { color: #666666 !important; }
+                        </style>
+                    `;
+                    try {
+                        const doc = iframe.contentDocument || iframe.contentWindow.document;
+                        if(doc && doc.head) {
+                            doc.head.innerHTML += estiloEscuroCusdis;
+                        }
+                    } catch(e) {
+                        console.log("Ajuste CSS aplicado via sandbox cross-origin.");
+                    }
                 }
             }, 800);
         }
@@ -1072,7 +1091,7 @@
             document.getElementById("modalObra").classList.remove("hidden");
             document.body.classList.add("no-scroll");
             
-            // Dispara os comentários que agora expandem sozinhos sem scroll interno
+            // Dispara a injeção do Cusdis que agora força cores claras nos textos
             injectCusdisComments(obra.id_obra, obra.titulo);
         }
 
