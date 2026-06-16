@@ -322,7 +322,7 @@
             overflow-y: auto;
             -webkit-overflow-scrolling: touch;
             padding: 20px;
-            padding-bottom: 100px;
+            padding-bottom: 120px; /* Garante espaço extra para rolagem total */
         }
 
         .modal-conteudo {
@@ -520,12 +520,13 @@
         .iframe-player { width: 100%; height: 100%; border: none; }
 
         /* ==========================================================================
-           ESTILIZAÇÃO DA CAIXA DE COMENTÁRIOS DO CUSDIS (TELA INFINITA)
+           FORÇANDO TELA INFINITA NO CUSDIS (Sem Caixas Engessadas)
            ========================================================================== */
         .container-comentarios-cusdis {
             margin-top: 50px;
             border-top: 1px solid var(--linha-fina);
             padding-top: 30px;
+            width: 100%;
         }
         .titulo-comentarios {
             font-family: var(--font-titulo);
@@ -533,11 +534,17 @@
             margin-bottom: 20px;
             letter-spacing: -0.5px;
         }
-        /* Garante que o widget cresça dinamicamente sem forçar barras de rolagem duplas */
-        #cusdis_thread {
+        /* Reseta absolutamente qualquer bloqueio de tamanho forçado pelo widget */
+        #wrapperCusdisDinamico {
             width: 100%;
-            min-height: 200px;
             display: block;
+        }
+        #cusdis_thread, #cusdis_thread iframe {
+            width: 100% !important;
+            min-height: 450px !important; /* Base inicial grande */
+            height: auto !important; /* Permite esticar infinitamente */
+            display: block !important;
+            overflow: hidden !important;
         }
 
     </style>
@@ -725,8 +732,6 @@
 
         function fecharModalPeloBotao() { history.back(); }
 
-        document.getElementById("logoSite")
-
         function limparTexto(texto) {
             if(!texto) return "";
             return texto.toString().normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/[-_]/g, " ").toLowerCase().trim();
@@ -901,15 +906,12 @@
         }
 
         // ==========================================================================
-        // MOTOR RECARREGÁVEL DO CUSDIS (Injeção Dinâmica Infinita)
+        // MOTOR DE INJEÇÃO DO CUSDIS COM CORREÇÃO DE ALTURA DE TELA INFINITA
         // ==========================================================================
         function injectCusdisComments(idObra, tituloObra) {
             const wrapper = document.getElementById("wrapperCusdisDinamico");
-            
-            // Limpa o comentário anterior para evitar vazamentos de memória
             wrapper.innerHTML = "";
             
-            // Cria a tag HTML pura exatamente como exigido pelo Cusdis
             const thread = document.createElement("div");
             thread.id = "cusdis_thread";
             thread.setAttribute("data-host", "https://cusdis.com");
@@ -920,10 +922,19 @@
             
             wrapper.appendChild(thread);
             
-            // Dispara o motor do Cusdis para renderizar a caixa no elemento que acabou de nascer
             if (window.renderCusdis) {
                 window.renderCusdis(thread);
             }
+
+            // Monitor inteligente: Força o iframe a esticar e herdar a altura de tela infinita real
+            setTimeout(() => {
+                const iframe = thread.querySelector('iframe');
+                if(iframe) {
+                    iframe.style.setProperty('height', 'auto', 'important');
+                    iframe.style.setProperty('min-height', '450px', 'important');
+                    iframe.style.setProperty('overflow', 'hidden', 'important');
+                }
+            }, 800);
         }
 
         // ==========================================================================
@@ -1061,7 +1072,7 @@
             document.getElementById("modalObra").classList.remove("hidden");
             document.body.classList.add("no-scroll");
             
-            // EXECUTA A INJEÇÃO INFINITA DO CUSDIS APÓS ERGUER O VISUAL
+            // Dispara os comentários que agora expandem sozinhos sem scroll interno
             injectCusdisComments(obra.id_obra, obra.titulo);
         }
 
