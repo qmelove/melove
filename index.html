@@ -548,7 +548,6 @@
             margin-bottom: 20px;
             letter-spacing: -0.5px;
         }
-        document.getElementById("wrapperCusdisDinamico")
         #cusdis_thread, #cusdis_thread iframe {
             width: 100% !important;
             min-height: 460px !important; 
@@ -742,9 +741,17 @@
 
         function fecharModalPeloBotao() { history.back(); }
 
+        // LIMPEZA ULTRA INTELIGENTE: Remove acentos, cedilhas, hifens, traços e espaços extras
         function limparTexto(texto) {
             if(!texto) return "";
-            return texto.toString().normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/[-_]/g, " ").toLowerCase().trim();
+            return texto.toString()
+                .normalize("NFD")
+                .replace(/[\u0300-\u036f]/g, "") // Remove acentos
+                .replace(/ç/g, "c")
+                .replace(/[-—_]/g, " ") // Transforma hifens/traços em espaços normais
+                .replace(/\s+/g, " ") // Junta espaços duplos
+                .toLowerCase()
+                .trim();
         }
 
         function processarEstadoVisual(nav, param) {
@@ -803,7 +810,7 @@
         }
 
         // ==========================================================================
-        // BUSCA INTELIGENTE
+        // BUSCA INTELIGENTE CORRIGIDA E SEM BUGS
         // ==========================================================================
         function configurarBuscadorInteligente() {
             const input = document.getElementById("campoPesquisa");
@@ -826,7 +833,7 @@
             });
         }
 
-        function ejecutarBusca(termo) {
+        function executarBusca(termo) {
             let termoLimpo = limparTexto(termo);
             let achados = bancoDadosObras.filter(o => {
                 return limparTexto(o.titulo).includes(termoLimpo) || 
@@ -842,7 +849,6 @@
             renderizarGridObras(achados);
         }
 
-        // document.getElementById("gridObras")
         function renderizarGridObras(obras) {
             const grid = document.getElementById("gridObras");
             grid.innerHTML = "";
@@ -982,10 +988,9 @@
 
             let sinopseHtml = `<div class="sinopse-modal">${obra.sinopse || ""}</div>`;
             
-            // Caixa com a sua mensagem de aviso personalizada!
             let avisoPopupsHtml = `
             <div class="aviso-popups-modal">
-                ⚠️ Todos os links para assistir redirecionam a abas com pop ups. Recomendo fortemente que utilizem algum navegador com Adblock, pois normalmente é aberto duas pop ups até o player rodar de vez (nada muito incômodo) e um terceiro pode surgir. E sobre isso não tem muito o que fazer pois é ads do próprio player :/ A perfomance pode ser meio lenta devido a falta de acessos, então paciência :) Espero que entendam e tenham bom proveito &lt;3
+                ⚠️ Todos os links para assistir redirecionam a abas com pop ups. Recomendo fortemente que utilizem algum navegador com Adblock, pois normalmente é aberto duas pop ups até o player rodar de vez (nada muito incômodo) e um third pode surgir. E sobre isso não tem muito o que fazer pois é ads do próprio player :/ A perfomance pode ser meio lenta devido a falta de acessos, então paciência :) Espero que entendam e tenham bom proveito &lt;3
             </div>`;
 
             let tagsHtml = `<div class="container-tags-generos">`;
@@ -1004,7 +1009,7 @@
             
             let duracaoOuStatus = obra.duracao_ou_status ? ` | ${obra.duracao_ou_status}` : "";
 
-            // LAYOUT GERAL COM A INJEÇÃO DO AVISO LOGO ABAIXO DA SINOPSE
+            // LAYOUT GERAL
             html = `
             <div class="header-modal-filme">
                 <img class="banner-obra-modal" src="${obra.capa_banner || obra.capa_poster}" alt="${obra.titulo}" id="modalImagemFicha">
@@ -1108,7 +1113,7 @@
             document.getElementById("modalObra").classList.remove("hidden");
             document.body.classList.add("no-scroll");
             
-            // Dispara a injeção do Cusdis
+            // Dispara o Cusdis
             injectCusdisComments(obra.id_obra, obra.titulo);
         }
 
