@@ -424,8 +424,22 @@
             font-size: 9px;
             line-height: 1.6;
             text-align: justify;
-            margin-bottom: 30px;
+            margin-bottom: 15px;
             color: var(--texto-mutado);
+        }
+
+        /* CAIXA DE AVISO DOS POP-UPS */
+        .aviso-popups-modal {
+            font-family: var(--font-alternativa);
+            font-size: 8.5px;
+            line-height: 1.5;
+            text-align: justify;
+            color: #888888;
+            border: 1px solid #222222;
+            padding: 10px;
+            border-radius: 6px;
+            margin-bottom: 30px;
+            background-color: #161616;
         }
 
         .bloco-links-filme {
@@ -534,10 +548,7 @@
             margin-bottom: 20px;
             letter-spacing: -0.5px;
         }
-        #wrapperCusdisDinamico {
-            width: 100%;
-            display: block;
-        }
+        document.getElementById("wrapperCusdisDinamico")
         #cusdis_thread, #cusdis_thread iframe {
             width: 100% !important;
             min-height: 460px !important; 
@@ -815,7 +826,7 @@
             });
         }
 
-        function executarBusca(termo) {
+        function ejecutarBusca(termo) {
             let termoLimpo = limparTexto(termo);
             let achados = bancoDadosObras.filter(o => {
                 return limparTexto(o.titulo).includes(termoLimpo) || 
@@ -831,6 +842,7 @@
             renderizarGridObras(achados);
         }
 
+        // document.getElementById("gridObras")
         function renderizarGridObras(obras) {
             const grid = document.getElementById("gridObras");
             grid.innerHTML = "";
@@ -918,7 +930,7 @@
             thread.setAttribute("data-page-id", idObra);
             thread.setAttribute("data-page-title", tituloObra);
             thread.setAttribute("data-page-url", window.location.href);
-            thread.setAttribute("data-theme", "dark"); // Força o Cusdis a nascer no modo escuro
+            thread.setAttribute("data-theme", "dark");
             
             wrapper.appendChild(thread);
             
@@ -926,7 +938,6 @@
                 window.renderCusdis(thread);
             }
 
-            // Monitor Inteligente de Injeção de Estilos CSS customizados no Iframe
             setTimeout(() => {
                 const iframe = thread.querySelector('iframe');
                 if(iframe) {
@@ -934,7 +945,6 @@
                     iframe.style.setProperty('min-height', '460px', 'important');
                     iframe.style.setProperty('overflow', 'hidden', 'important');
                     
-                    // Injeta código CSS diretamente dentro do frame do Cusdis para forçar as fontes a aparecerem
                     const estiloEscuroCusdis = `
                         <style>
                             label, .cusdis-label, .text-sm { color: #aaaaaa !important; font-family: monospace !important; }
@@ -972,6 +982,12 @@
 
             let sinopseHtml = `<div class="sinopse-modal">${obra.sinopse || ""}</div>`;
             
+            // Caixa com a sua mensagem de aviso personalizada!
+            let avisoPopupsHtml = `
+            <div class="aviso-popups-modal">
+                ⚠️ Todos os links para assistir redirecionam a abas com pop ups. Recomendo fortemente que utilizem algum navegador com Adblock, pois normalmente é aberto duas pop ups até o player rodar de vez (nada muito incômodo) e um terceiro pode surgir. E sobre isso não tem muito o que fazer pois é ads do próprio player :/ A perfomance pode ser meio lenta devido a falta de acessos, então paciência :) Espero que entendam e tenham bom proveito &lt;3
+            </div>`;
+
             let tagsHtml = `<div class="container-tags-generos">`;
             tagsHtml += `<span class="tag-modal bold" onclick="clicarTagCategoria('${obra.tipo.replace(/'/g, "\\'")}')">${obra.tipo}</span> `;
             let generos = obra.generos || "";
@@ -988,7 +1004,7 @@
             
             let duracaoOuStatus = obra.duracao_ou_status ? ` | ${obra.duracao_ou_status}` : "";
 
-            // LAYOUT GERAL
+            // LAYOUT GERAL COM A INJEÇÃO DO AVISO LOGO ABAIXO DA SINOPSE
             html = `
             <div class="header-modal-filme">
                 <img class="banner-obra-modal" src="${obra.capa_banner || obra.capa_poster}" alt="${obra.titulo}" id="modalImagemFicha">
@@ -1001,6 +1017,7 @@
                 ${outrosTitulosHtml}
             </div>
             ${sinopseHtml}
+            ${avisoPopupsHtml}
             `;
 
             // SE FOR FILME
@@ -1091,7 +1108,7 @@
             document.getElementById("modalObra").classList.remove("hidden");
             document.body.classList.add("no-scroll");
             
-            // Dispara a injeção do Cusdis que agora força cores claras nos textos
+            // Dispara a injeção do Cusdis
             injectCusdisComments(obra.id_obra, obra.titulo);
         }
 
