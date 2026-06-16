@@ -519,7 +519,30 @@
         }
         .iframe-player { width: 100%; height: 100%; border: none; }
 
+        /* ==========================================================================
+           ESTILIZAÇÃO DA CAIXA DE COMENTÁRIOS DO CUSDIS (TELA INFINITA)
+           ========================================================================== */
+        .container-comentarios-cusdis {
+            margin-top: 50px;
+            border-top: 1px solid var(--linha-fina);
+            padding-top: 30px;
+        }
+        .titulo-comentarios {
+            font-family: var(--font-titulo);
+            font-size: 22px;
+            margin-bottom: 20px;
+            letter-spacing: -0.5px;
+        }
+        /* Garante que o widget cresça dinamicamente sem forçar barras de rolagem duplas */
+        #cusdis_thread {
+            width: 100%;
+            min-height: 200px;
+            display: block;
+        }
+
     </style>
+    
+    <script async defer src="https://cusdis.com/js/cusdis.es.js"></script>
 </head>
 <body>
 
@@ -535,8 +558,7 @@
                 <input type="search" id="campoPesquisa" class="input-busca" placeholder="Pesquisar obras, diretores, gêneros...">
             </div>
         </form>
-        <div id="subtextoDinamicoBusca" class="subtexto-busca">CARREGANDO ACERVO...
-         </div>
+        <div id="subtextoDinamicoBusca" class="subtexto-busca">CARREGANDO ACERVO...</div>
     </div>
 
     <main id="conteudoPrincipal">
@@ -586,12 +608,16 @@
             </div>
 
             <div id="modalConteudoDinamico"></div>
+            
+            <div class="container-comentarios-cusdis">
+                <div class="titulo-comentarios">Discussão da Obra</div>
+                <div id="wrapperCusdisDinamico"></div>
+            </div>
         </div>
     </div>
 
     <footer id="footerTexto" class="hidden">
-        reunindo tudo o que eu encontro por aí em um só lugar.
-        infelizmente todos os links para assistir redirecionam a abas com popups, recomendo fortemente que utilizem algum navegador com Adblock e tenham bom proveito. &lt;3
+        reunindo tudo o que eu encontro por aí em um só lugar &lt;3
     </footer>
 
     <script>
@@ -699,6 +725,8 @@
 
         function fecharModalPeloBotao() { history.back(); }
 
+        document.getElementById("logoSite")
+
         function limparTexto(texto) {
             if(!texto) return "";
             return texto.toString().normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/[-_]/g, " ").toLowerCase().trim();
@@ -783,7 +811,7 @@
             });
         }
 
-        function executarBusca(termo) {
+        function ejecutarBusca(termo) {
             let termoLimpo = limparTexto(termo);
             let achados = bancoDadosObras.filter(o => {
                 return limparTexto(o.titulo).includes(termoLimpo) || 
@@ -865,13 +893,37 @@
         function clicarTagFiltro(coluna, valor) { navegarPara('filtro', {coluna: coluna, valor: valor}); }
 
         function mudarTemporada(elementoClicado, temp) {
-            // Oculta todas as temporadas e mostra a clicada
             document.querySelectorAll('.season-content').forEach(el => el.classList.add('hidden'));
             document.querySelector(`.season-content-${temp}`).classList.remove('hidden');
             
-            // Muda a estilização dos botões
             document.querySelectorAll('.temp-tab').forEach(el => el.classList.remove('active'));
             elementoClicado.classList.add('active');
+        }
+
+        // ==========================================================================
+        // MOTOR RECARREGÁVEL DO CUSDIS (Injeção Dinâmica Infinita)
+        // ==========================================================================
+        function injectCusdisComments(idObra, tituloObra) {
+            const wrapper = document.getElementById("wrapperCusdisDinamico");
+            
+            // Limpa o comentário anterior para evitar vazamentos de memória
+            wrapper.innerHTML = "";
+            
+            // Cria a tag HTML pura exatamente como exigido pelo Cusdis
+            const thread = document.createElement("div");
+            thread.id = "cusdis_thread";
+            thread.setAttribute("data-host", "https://cusdis.com");
+            thread.setAttribute("data-app-id", "e58fbd0e-9316-424a-8e63-2fc070597a6c");
+            thread.setAttribute("data-page-id", idObra);
+            thread.setAttribute("data-page-title", tituloObra);
+            thread.setAttribute("data-page-url", window.location.href);
+            
+            wrapper.appendChild(thread);
+            
+            // Dispara o motor do Cusdis para renderizar a caixa no elemento que acabou de nascer
+            if (window.renderCusdis) {
+                window.renderCusdis(thread);
+            }
         }
 
         // ==========================================================================
@@ -940,7 +992,6 @@
                 let eps = bancoEpisodios[id] || [];
                 
                 if(eps.length > 0) {
-                    // Agrupar por Temporada
                     let temporadasMap = {};
                     eps.forEach(ep => {
                         let t = ep.temporada || "1";
@@ -952,7 +1003,6 @@
 
                     html += `<div class="container-temporadas">`;
 
-                    // Renderizar as Abas de Temporada se tiver mais de 1
                     if (temps.length > 1) {
                         html += `<div class="temporadas-nav">`;
                         temps.forEach((t, i) => {
@@ -970,7 +1020,6 @@
 
                     html += `<div class="lista-episodios">`;
                     
-                    // Renderizar os episódios de cada temporada
                     temps.forEach((t, i) => {
                         let hiddenClass = i === 0 ? "" : "hidden";
                         html += `<div class="season-content season-content-${t} ${hiddenClass}">`;
@@ -1001,16 +1050,19 @@
                             `;
                         });
                         
-                        html += `</div>`; // fim do season-content
+                        html += `</div>`;
                     });
 
-                    html += `</div></div>`; // fim da lista de episodios e container
+                    html += `</div></div>`;
                 }
             }
 
             document.getElementById("modalConteudoDinamico").innerHTML = html;
             document.getElementById("modalObra").classList.remove("hidden");
             document.body.classList.add("no-scroll");
+            
+            // EXECUTA A INJEÇÃO INFINITA DO CUSDIS APÓS ERGUER O VISUAL
+            injectCusdisComments(obra.id_obra, obra.titulo);
         }
 
         function dispararMiniCinema(url, elClick, storageKey) {
