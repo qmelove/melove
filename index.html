@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>melove — um acervo juntando coisinhas</title>
+    <title>melove — um acervo juntando coisas que encontra por aí</title>
     
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -176,7 +176,7 @@
             pointer-events: none;
             user-select: none;
             animation: floatBrilho 6s ease-in-out infinite;
-            filter: invert(1); /* Inverte a imagem preta para branca no fundo escuro */
+            filter: invert(1);
             opacity: 0.8;
         }
 
@@ -311,7 +311,7 @@
         }
 
         /* ==========================================================================
-           MODAL DE DETALHES (FICHA DA OBRA)
+           MODAL DE DETALHES E NAVEGAÇÃO DE TEMPORADAS
            ========================================================================== */
         .modal-overlay {
             position: fixed;
@@ -366,21 +366,6 @@
             border: 1px solid var(--linha-fina);
         }
 
-        .header-modal-livro {
-            display: flex;
-            gap: 15px;
-            align-items: flex-start;
-            margin-bottom: 20px;
-        }
-        .capa-livro-modal {
-            width: 120px;
-            aspect-ratio: 2 / 3;
-            object-fit: cover;
-            border-radius: 8px;
-            box-shadow: 0 4px 10px rgba(0,0,0,0.5);
-            border: 1px solid var(--linha-fina);
-        }
-        
         .info-bloco-esquerda { flex: 1; min-width: 0; }
 
         .titulo-obra-modal {
@@ -453,23 +438,31 @@
         .link-streaming { font-size: 14px; font-weight: bold; text-decoration: underline; cursor: pointer; display: inline-block;}
         .link-streaming.visto { color: var(--linha-fina) !important; text-decoration: none; }
 
-        .bloco-legendas { font-size: 10px; margin-bottom: 20px;}
-        .label-legendas { font-family: var(--font-titulo); font-size: 16px; margin-bottom: 5px; }
-
-        .bloco-links-livro {
-            display: flex;
-            align-items: center;
-            gap: 30px;
-            margin-bottom: 30px;
-            justify-content: center;
-        }
-        .links-livro-col {
+        /* NAVEGAÇÃO DE TEMPORADAS */
+        .temporadas-nav {
             display: flex;
             gap: 20px;
-            text-align: center;
+            overflow-x: auto;
+            border-bottom: 1px solid var(--linha-fina);
+            margin-bottom: 25px;
+            padding-bottom: 5px;
+            font-family: var(--font-titulo);
+            font-size: 24px;
+            white-space: nowrap;
         }
-        .link-livro { font-size: 14px; font-weight: bold; text-decoration: underline; cursor: pointer; display: inline-block;}
-
+        .temporadas-nav::-webkit-scrollbar { display: none; }
+        .temp-tab {
+            cursor: pointer;
+            color: var(--texto-mutado);
+            transition: color 0.3s, border-color 0.3s;
+            padding-bottom: 5px;
+            margin-bottom: -6px;
+            border-bottom: 1px solid transparent;
+        }
+        .temp-tab.active {
+            color: var(--texto-escuro);
+            border-bottom: 1px solid var(--texto-escuro);
+        }
         .titulo-temporada-gatilho {
             font-family: var(--font-titulo);
             font-size: 28px;
@@ -491,7 +484,7 @@
         .ep-info-esquerda { flex: 1; padding-right: 15px; }
         .ep-titulo-linha {
             font-size: 11px;
-            margin-bottom: 8px;
+            margin-bottom: 2px;
             word-wrap: break-word;
             line-height: 1.3;
         }
@@ -500,10 +493,11 @@
             font-size: 8px;
             text-align: justify;
             color: var(--texto-mutado);
-            line-height: 1.5;
+            line-height: 1.6;
+            margin-top: 6px;
         }
 
-        .ep-links-direita { text-align: right; font-size: 10px; min-width: 70px; }
+        .ep-links-direita { text-align: right; font-size: 10px; min-width: 40px; }
         .ep-link-btn {
             font-weight: bold;
             text-decoration: underline;
@@ -531,7 +525,7 @@
 
     <header>
         <div class="logo-site" onclick="navegarPara('home')">melove</div>
-        <div class="descricao-site">um acervo juntando coisinhas</div>
+        <div class="descricao-site">um acervo juntando coisas que encontra por aí</div>
     </header>
 
     <div class="container-busca" id="areaBusca">
@@ -595,12 +589,12 @@
     </div>
 
     <footer id="footerTexto" class="hidden">
-        atualizando sempre que possível <3&lt;3
+        reunindo tudo o que eu encontro por aí em um só lugar &lt;3
     </footer>
 
     <script>
         // ==========================================================================
-        // CÉREBRO: BANCO DE DADOS DINÂMICO (Atualizado para as 2 novas planilhas)
+        // CÉREBRO: BANCO DE DADOS DINÂMICO
         // ==========================================================================
         const URL_OBRAS = "https://docs.google.com/spreadsheets/d/e/2PACX-1vQ_NYCR__vom0rgje4_v1WYigRPnf0W_eZcwVraqrBFlAGDDaOl0oTwDrt8aMot7EShzc1OlitVsNcJ/pub?gid=0&single=true&output=csv";
         const URL_EPISODIOS = "https://docs.google.com/spreadsheets/d/e/2PACX-1vQ_NYCR__vom0rgje4_v1WYigRPnf0W_eZcwVraqrBFlAGDDaOl0oTwDrt8aMot7EShzc1OlitVsNcJ/pub?gid=404247235&single=true&output=csv";
@@ -659,7 +653,6 @@
 
                 const configPapa = { header: true, skipEmptyLines: true, transformHeader: h => h.trim() };
                 
-                // Filtra apenas linhas que tenham ID e Título
                 bancoDadosObras = Papa.parse(resObras, configPapa).data.filter(o => o.id_obra && o.titulo);
                 
                 const arrEps = Papa.parse(resEps, configPapa).data.filter(e => e.id_obra_relacionada);
@@ -811,7 +804,6 @@
                 const item = document.createElement("div");
                 item.className = `item-obra`;
                 item.onclick = () => navegarPara('modal', obra.id_obra);
-                // Fallback elegante caso a imagem não carregue
                 item.innerHTML = `<img class="poster-imagem" src="${obra.capa_poster}" alt="${obra.titulo}" onerror="this.src='https://placehold.co/300x450/222/fff?text=Sem+Capa'">`;
                 grid.appendChild(item);
             });
@@ -832,7 +824,6 @@
                 cell.split(",").forEach(txt => {
                     let nome = txt.trim();
                     if(nome) {
-                        // Padroniza a contagem ignorando maiúsculas
                         let chave = nome.toUpperCase();
                         if(!mapaDados[chave]) mapaDados[chave] = {nomeOriginal: nome, qtd: 0};
                         mapaDados[chave].qtd += 1;
@@ -870,6 +861,16 @@
 
         function clicarTagCategoria(cat) { navegarPara('catalogo', cat); }
         function clicarTagFiltro(coluna, valor) { navegarPara('filtro', {coluna: coluna, valor: valor}); }
+
+        function mudarTemporada(elementoClicado, temp) {
+            // Oculta todas as temporadas e mostra a clicada
+            document.querySelectorAll('.season-content').forEach(el => el.classList.add('hidden'));
+            document.querySelector(`.season-content-${temp}`).classList.remove('hidden');
+            
+            // Muda a estilização dos botões
+            document.querySelectorAll('.temp-tab').forEach(el => el.classList.remove('active'));
+            elementoClicado.classList.add('active');
+        }
 
         // ==========================================================================
         // MONTAGEM DA TELA DE DETALHES (FILMES, SÉRIES, ETC)
@@ -918,7 +919,7 @@
             ${sinopseHtml}
             `;
 
-            // SE FOR FILME (Puxa os links diretos da aba principal)
+            // SE FOR FILME
             if (cat === 'filme' || cat === 'animacao' || cat === 'curta' || cat === 'documentario') {
                 let temLeg = obra.filme_assistir_leg || obra.filme_down_gofile_leg || obra.filme_down_transfer_leg;
                 let temDub = obra.filme_assistir_dub || obra.filme_down_gofile_dub || obra.filme_down_transfer_dub;
@@ -932,44 +933,76 @@
                 }
 
             } 
-            // SE FOR SÉRIE/DORAMA/ANIME (Puxa os episódios da aba 2)
+            // SE FOR SÉRIE/DORAMA/ANIME
             else {
                 let eps = bancoEpisodios[id] || [];
                 
                 if(eps.length > 0) {
-                    html += `
-                    <div class="container-temporadas">
-                        <div class="titulo-temporada-gatilho">
-                            Episódios
-                            <div style="font-family:monospace; font-size:3px; line-height:1; color:var(--texto-mutado);">${separatorASCII}</div>
-                        </div>
-                        <div class="lista-episodios">
-                    `;
-                    
+                    // Agrupar por Temporada
+                    let temporadasMap = {};
                     eps.forEach(ep => {
-                        let kLeg = `serie_${id}_ep${ep.numero_episodio}_leg`;
-                        let kDub = `serie_${id}_ep${ep.numero_episodio}_dub`;
-                        let vistos = { leg: verificarSeFoiVisto(kLeg), dub: verificarSeFoiVisto(kDub) };
+                        let t = ep.temporada || "1";
+                        if(!temporadasMap[t]) temporadasMap[t] = [];
+                        temporadasMap[t].push(ep);
+                    });
+                    
+                    let temps = Object.keys(temporadasMap).sort((a,b) => parseInt(a) - parseInt(b));
 
-                        let epLinksHtml = "";
-                        if(ep.assistir_leg) epLinksHtml += `<span class="ep-link-btn ${vistos.leg?'visto':''}" onclick="dispararMiniCinema('${ep.assistir_leg}', this, '${kLeg}')">Leg</span>`;
-                        if(ep.assistir_dub) epLinksHtml += `<span class="ep-link-btn ${vistos.dub?'visto':''}" onclick="dispararMiniCinema('${ep.assistir_dub}', this, '${kDub}')">Dub</span>`;
+                    html += `<div class="container-temporadas">`;
 
-                        let nomeEp = ep.titulo_episodio || `Episódio ${ep.numero_episodio}`;
-
+                    // Renderizar as Abas de Temporada se tiver mais de 1
+                    if (temps.length > 1) {
+                        html += `<div class="temporadas-nav">`;
+                        temps.forEach((t, i) => {
+                            let activeClass = i === 0 ? "active" : "";
+                            html += `<div class="temp-tab ${activeClass}" onclick="mudarTemporada(this, '${t}')">Temporada ${t}</div>`;
+                        });
+                        html += `</div>`;
+                    } else {
                         html += `
-                        <div class="item-episodio">
-                            <div class="ep-info-esquerda">
-                                <div class="ep-titulo-linha"><span class="ep-num">EP.${ep.numero_episodio} |</span> ${nomeEp}</div>
+                        <div class="titulo-temporada-gatilho">
+                            Temporada ${temps[0]}
+                            <div style="font-family:monospace; font-size:3px; line-height:1; color:var(--texto-mutado);">${separatorASCII}</div>
+                        </div>`;
+                    }
+
+                    html += `<div class="lista-episodios">`;
+                    
+                    // Renderizar os episódios de cada temporada
+                    temps.forEach((t, i) => {
+                        let hiddenClass = i === 0 ? "" : "hidden";
+                        html += `<div class="season-content season-content-${t} ${hiddenClass}">`;
+                        
+                        temporadasMap[t].forEach(ep => {
+                            let kLeg = `serie_${id}_ep${ep.numero_episodio}_leg`;
+                            let kDub = `serie_${id}_ep${ep.numero_episodio}_dub`;
+                            let vistos = { leg: verificarSeFoiVisto(kLeg), dub: verificarSeFoiVisto(kDub) };
+
+                            let epLinksHtml = "";
+                            if(ep.assistir_leg) epLinksHtml += `<span class="ep-link-btn ${vistos.leg?'visto':''}" onclick="dispararMiniCinema('${ep.assistir_leg}', this, '${kLeg}')">Leg</span>`;
+                            if(ep.assistir_dub) epLinksHtml += `<span class="ep-link-btn ${vistos.dub?'visto':''}" onclick="dispararMiniCinema('${ep.assistir_dub}', this, '${kDub}')">Dub</span>`;
+
+                            let nomeEp = ep.titulo_episodio || `Episódio ${ep.numero_episodio}`;
+                            let duracaoStr = ep.duracao_do_episodio ? `<span style="font-size: 8px; color: var(--texto-mutado); margin-left: 8px;">${ep.duracao_do_episodio}</span>` : "";
+                            let sinopseStr = ep.sinopse_do_episodio ? `<div class="ep-sinopse">${ep.sinopse_do_episodio}</div>` : "";
+
+                            html += `
+                            <div class="item-episodio">
+                                <div class="ep-info-esquerda">
+                                    <div class="ep-titulo-linha"><span class="ep-num">EP.${ep.numero_episodio} |</span> ${nomeEp}${duracaoStr}</div>
+                                    ${sinopseStr}
+                                </div>
+                                <div class="ep-links-direita" style="display: flex; flex-direction: column; align-items: flex-end; gap: 6px;">
+                                    ${epLinksHtml}
+                                </div>
                             </div>
-                            <div class="ep-links-direita flex gap-3">
-                                ${epLinksHtml}
-                            </div>
-                        </div>
-                        `;
+                            `;
+                        });
+                        
+                        html += `</div>`; // fim do season-content
                     });
 
-                    html += `</div></div>`;
+                    html += `</div></div>`; // fim da lista de episodios e container
                 }
             }
 
