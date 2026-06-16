@@ -6,89 +6,444 @@
     <title>melove | Acervo</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.4.1/papaparse.min.js"></script>
-    <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,700;1,400&family=Space+Mono&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,700;1,400&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet">
     
     <style>
         body {
-            background-color: #000;
-            color: #fff;
-            /* Fonte elegante para o título */
-            font-family: 'Playfair Display', serif; 
+            background-color: #000000;
+            color: #ffffff;
+            font-family: 'Playfair Display', serif;
+            -webkit-tap-highlight-color: transparent;
         }
         .mono {
-            /* Fonte parecida com máquina de escrever para os subtítulos */
-            font-family: 'Space Mono', monospace; 
+            font-family: 'Space Mono', monospace;
         }
-        /* Fundo da borboleta (vamos colocar a imagem real depois) */
-        .bg-borboleta {
-            background-image: radial-gradient(circle, rgba(255,255,255,0.1) 0%, rgba(0,0,0,0) 60%);
+        /* Esconde as barras de rolagem mas mantém o funcionamento */
+        ::-webkit-scrollbar {
+            display: none;
         }
     </style>
 </head>
-<body class="min-h-screen flex flex-col items-center pt-16 px-6">
+<body class="min-h-screen flex flex-col items-center pt-12 px-4 pb-6 selection:bg-neutral-800">
 
-    <header class="text-center w-full max-w-2xl">
-        <h1 class="text-6xl tracking-tight mb-2">melove</h1>
-        <p class="mono text-xs text-gray-500 uppercase tracking-widest mb-8">Um acervo juntando coisinhas</p>
+    <header class="text-center w-full max-w-xl z-20">
+        <h1 onclick="voltarParaHome()" class="text-5xl tracking-tight mb-1 cursor-pointer hover:opacity-80 active:scale-95 transition-all">melove</h1>
+        <p class="mono text-[10px] text-neutral-500 uppercase tracking-[0.25em] mb-6">Um acervo juntando coisinhas</p>
         
-        <div class="relative w-full">
+        <div class="relative w-full px-2 mb-6">
             <input 
                 type="text" 
                 id="searchBar"
-                class="w-full bg-transparent border border-gray-600 rounded-md py-3 px-10 text-sm mono focus:outline-none focus:border-white transition-colors"
-                placeholder="Buscar obras, diretores, gêneros..."
+                class="w-full bg-transparent border border-neutral-800 rounded-full py-2.5 pl-10 pr-4 text-xs mono focus:outline-none focus:border-neutral-500 transition-colors text-center"
+                placeholder="BUSCAR OBRAS, DIRETORES, GÊNEROS..."
             >
-            <span class="absolute left-3 top-3 text-gray-500">⚲</span>
+            <span class="absolute left-6 top-3 text-neutral-600 text-xs mono">⚲</span>
         </div>
-        
-        <p id="totalObrasText" class="mono text-xs mt-8 tracking-widest uppercase">Carregando acervo...</p>
     </header>
 
-    <main class="relative w-full max-w-md h-96 mt-12 bg-borboleta flex items-center justify-center">
-        <nav class="mono text-sm tracking-widest">
-            <a href="#" class="absolute top-0 left-1/2 -translate-x-1/2 hover:text-gray-400">CATÁLOGO</a>
-            <a href="#" class="absolute top-1/4 right-0 hover:text-gray-400">GÊNEROS</a>
-            <a href="#" class="absolute top-1/4 left-0 hover:text-gray-400">FILMES</a>
-            <a href="#" class="absolute bottom-1/4 right-0 hover:text-gray-400">DORAMAS</a>
-            <a href="#" class="absolute bottom-1/4 left-0 hover:text-gray-400">ANIMAÇÕES</a>
-            <a href="#" class="absolute bottom-0 left-1/2 -translate-x-1/2 hover:text-gray-400">SÉRIES</a>
-        </nav>
+    <main id="app-content" class="w-full max-w-xl flex-1 flex flex-col items-center justify-center relative my-4">
+        <p class="mono text-xs text-neutral-500 tracking-widest uppercase animate-pulse">Carregando acervo...</p>
     </main>
 
-    <footer class="mt-auto pb-8 mono text-xs text-gray-500 tracking-widest">
+    <footer class="w-full text-center mono text-[10px] text-neutral-600 tracking-widest mt-auto pt-4 border-t border-neutral-950">
         ATUALIZANDO SEMPRE QUE POSSÍVEL &lt;3
     </footer>
 
     <script>
-        // Links das suas planilhas
+        // Seus links CSV oficiais das planilhas
         const urlObras = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vQ_NYCR__vom0rgje4_v1WYigRPnf0W_eZcwVraqrBFlAGDDaOl0oTwDrt8aMot7EShzc1OlitVsNcJ/pub?gid=0&single=true&output=csv';
         const urlEpisodios = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vQ_NYCR__vom0rgje4_v1WYigRPnf0W_eZcwVraqrBFlAGDDaOl0oTwDrt8aMot7EShzc1OlitVsNcJ/pub?gid=404247235&single=true&output=csv';
 
-        let bancoDeObras = [];
+        // Bancos de dados locais salvos na memória do site
+        let obras = [];
+        let episodios = [];
+        let telaAtual = 'home'; 
 
-        // FUNÇÃO DE BUSCA INTELIGENTE: Remove acentos, traços e deixa tudo minúsculo
+        // Função de Limpeza de Texto para Busca Perfeita (Remove acentos, traços, etc)
         function limparTexto(texto) {
-            if(!texto) return "";
-            return texto.normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/[-]/g, " ").toLowerCase();
+            if (!texto) return "";
+            return texto.toString().normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/[-—_]/g, " ").toLowerCase().trim();
         }
 
-        // Carregar Planilha
-        Papa.parse(urlObras, {
-            download: true,
-            header: true,
-            complete: function(results) {
-                bancoDeObras = results.data.filter(obra => obra.id_obra); // Filtra linhas vazias
-                document.getElementById('totalObrasText').innerText = `${bancoDeObras.length} OBRAS AO TOTAL...`;
-                console.log("Planilha carregada!", bancoDeObras);
+        // CARREGAMENTO DOS DADOS (Roda assim que abre o site)
+        function inicializarAcervo() {
+            Papa.parse(urlObras, {
+                download: true,
+                header: true,
+                complete: function(resultadoObras) {
+                    obras = resultadoObras.data.filter(o => o.id_obra && o.titulo);
+                    
+                    // Logo após carregar as obras, carrega os episódios
+                    Papa.parse(urlEpisodios, {
+                        download: true,
+                        header: true,
+                        complete: function(resultadoEps) {
+                            episodios = resultadoEps.data.filter(e => e.id_episodio && e.id_obra_relacionada);
+                            showHome(); // Abre a tela inicial com tudo pronto
+                        }
+                    });
+                }
+            });
+        }
+
+        // TELA 1: HOME (Menu principal estilizado com a borboleta)
+        function showHome() {
+            telaAtual = 'home';
+            document.getElementById('searchBar').value = ''; // Limpa a barra
+            
+            const content = document.getElementById('app-content');
+            content.className = "w-full max-w-md flex flex-col items-center justify-center relative min-h-[380px]";
+            
+            content.innerHTML = `
+                <p class="mono text-[11px] text-neutral-400 tracking-widest uppercase mb-4">${obras.length} OBRAS AO TOTAL...</p>
+                
+                <div class="relative w-full h-80 flex items-center justify-center">
+                    
+                    <div class="absolute inset-0 flex items-center justify-center opacity-15 pointer-events-none">
+                        <svg width="180" height="180" viewBox="0 0 100 100" fill="none" stroke="currentColor" stroke-width="0.8">
+                            <path d="M50 65 C40 60, 15 55, 15 35 C15 20, 35 15, 48 38 C49 40, 50 42, 50 45" />
+                            <path d="M50 65 C60 60, 85 55, 85 35 C85 20, 65 15, 52 38 C51 40, 50 42, 50 45" />
+                            <path d="M50 65 C43 65, 25 70, 25 80 C25 88, 42 85, 48 70 C49 68, 50 66, 50 65" />
+                            <path d="M50 65 C57 65, 75 70, 75 80 C75 88, 58 85, 52 70 C51 68, 50 66, 50 65" />
+                            <line x1="50" y1="30" x2="50" y2="75" stroke-width="1.2"/>
+                            <path d="M50 30 C48 25, 42 20, 40 22 M50 30 C52 25, 58 20, 60 22" />
+                        </svg>
+                    </div>
+
+                    <nav class="absolute inset-0 w-full h-full mono text-[12px] tracking-widest text-neutral-300 font-medium">
+                        <button onclick="filtrarCatalogo('todos', 'CATÁLOGO')" class="absolute top-2 left-1/2 -translate-x-1/2 hover:text-white transition-colors">CATÁLOGO</button>
+                        
+                        <button onclick="filtrarCatalogo('Filme', 'FILMES')" class="absolute top-16 left-4 hover:text-white transition-colors">FILMES</button>
+                        <button onclick="mostrarListaMetadata('generos', 'GÊNEROS')" class="absolute top-16 right-4 hover:text-white transition-colors">GÊNEROS</button>
+                        
+                        <button onclick="mostrarListaMetadata('pais', 'PAÍSES')" class="absolute top-36 left-2 hover:text-white transition-colors">PAÍSES</button>
+                        <button onclick="filtrarCatalogo('Anime', 'ANIMES')" class="absolute top-36 right-2 hover:text-white transition-colors">ANIMES</button>
+                        
+                        <button onclick="filtrarCatalogo('Animacao', 'ANIMAÇÕES')" class="absolute bottom-20 left-4 hover:text-white transition-colors">ANIMAÇÕES</button>
+                        <button onclick="filtrarCatalogo('Dorama', 'DORAMAS')" class="absolute bottom-20 right-4 hover:text-white transition-colors">DORAMAS</button>
+                        
+                        <button onclick="mostrarListaMetadata('diretor', 'DIRETORES')" class="absolute bottom-4 left-6 hover:text-white transition-colors">DIRETORES</button>
+                        <button onclick="filtrarCatalogo('Serie', 'SÉRIES')" class="absolute bottom-4 right-6 hover:text-white transition-colors">SÉRIES</button>
+                    </nav>
+                </div>
+            `;
+        }
+
+        // TELA 2: GRADE DE POSTERS (Estilo Imagem 2)
+        function renderGradeObras(listaFiltrada, tituloSessao) {
+            telaAtual = 'grid';
+            const content = document.getElementById('app-content');
+            content.className = "w-full flex flex-col items-start animate-fadeIn";
+            
+            let gridHTML = `
+                <div class="w-full flex justify-between items-center mb-6 px-1">
+                    <h2 class="mono text-sm tracking-widest uppercase font-bold text-neutral-200">${tituloSessao} <span class="text-xs text-neutral-500 font-normal">${listaFiltrada.length} OBRAS</span></h2>
+                    <button onclick="voltarParaHome()" class="mono text-xs text-neutral-500 hover:text-white">✕ VOLTAR</button>
+                </div>
+            `;
+
+            if (listaFiltrada.length === 0) {
+                gridHTML += `<p class="mono text-xs text-neutral-600 w-full text-center py-12">NENHUMA OBRA ENCONTRADA :(</p>`;
+            } else {
+                gridHTML += `<div class="w-full grid grid-cols-3 gap-3 px-1">`;
+                listaFiltrada.forEach(obra => {
+                    gridHTML += `
+                        <div onclick="abrirDetalhes('${obra.id_obra}')" class="flex flex-col cursor-pointer group active:scale-95 transition-transform">
+                            <div class="aspect-[2/3] w-full bg-neutral-900 rounded-lg overflow-hidden border border-neutral-900 group-hover:border-neutral-700 transition-colors">
+                                <img src="${obra.capa_poster}" alt="${obra.titulo}" class="w-full h-full object-cover opacity-90 group-hover:opacity-100 transition-opacity" onerror="this.src='https://placehold.co/300x450/111/fff?text=Sem+Foto'">
+                            </div>
+                            <h3 class="text-xs tracking-tight text-neutral-300 mt-1.5 truncate leading-tight">${obra.titulo}</h3>
+                        </div>
+                    `;
+                });
+                gridHTML += `</div>`;
             }
+            content.innerHTML = gridHTML;
+        }
+
+        // FUNÇÃO DE FILTRAGEM DOS BOTÕES DA HOME
+        function filtrarCatalogo(tipoFiltro, label) {
+            if (tipoFiltro === 'todos') {
+                renderGradeObras(obras, label);
+            } else if (tipoFiltro === 'Animacao') {
+                // Filtra tanto se for o Tipo "Animacao" quanto se tiver "Animação" no gênero
+                const filtradas = obras.filter(o => o.tipo === 'Animacao' || o.tipo === 'Animação' || limparTexto(o.generos).includes('animacao'));
+                renderGradeObras(filtradas, label);
+            } else {
+                const filtradas = obras.filter(o => o.tipo === tipoFiltro);
+                renderGradeObras(filtradas, label);
+            }
+        }
+
+        // TELA 3: LISTAGEM DE METADADOS (Gêneros, Países, Diretores - Estilo Imagem 3)
+        function mostrarListaMetadata(campo, tituloSessao) {
+            telaAtual = 'list';
+            const content = document.getElementById('app-content');
+            content.className = "w-full flex flex-col items-start animate-fadeIn";
+
+            // Processamento inteligente dos dados
+            let contagem = {};
+            obras.forEach(obra => {
+                let itens = [];
+                if (campo === 'generos') {
+                    // Divide por vírgulas se houver múltiplos gêneros na linha
+                    itens = obra.generos ? obra.generos.split(',').map(s => s.trim()) : [];
+                } else {
+                    if (obra[campo]) itens.push(obra[campo].trim());
+                }
+
+                itens.forEach(item => {
+                    if (!item) return;
+                    // Padronização para contagem correta (ex: Ação e Acao contam juntos no cérebro)
+                    let chaveExibicao = item; 
+                    let chaveLimpa = limparTexto(item);
+                    
+                    if (!contagem[chaveLimpa]) {
+                        contagem[chaveLimpa] = { nome: chaveExibicao, total: 0 };
+                    }
+                    contagem[chaveLimpa].total += 1;
+                });
+            });
+
+            // Converte o mapa para um array ordenado por quantidade
+            let listaOrdenada = Object.values(contagem).sort((a, b) => b.total - a.total);
+
+            let listHTML = `
+                <div class="w-full flex justify-between items-center mb-6 px-2">
+                    <h2 class="mono text-sm tracking-widest uppercase font-bold text-neutral-200">${tituloSessao} <span class="text-xs text-neutral-500 font-normal">${listaOrdenada.length}</span></h2>
+                    <button onclick="voltarParaHome()" class="mono text-xs text-neutral-500 hover:text-white">✕ VOLTAR</button>
+                </div>
+                <div class="w-full px-2 grid grid-cols-2 gap-x-8 gap-y-3 font-mono text-xs tracking-wider uppercase">
+            `;
+
+            listaOrdenada.forEach(item => {
+                listHTML += `
+                    <div onclick="filtrarPorMetadata('${campo}', '${item.nome}')" class="flex justify-between py-1.5 border-b border-neutral-950 hover:border-neutral-800 cursor-pointer text-neutral-400 hover:text-white transition-colors active:translate-x-1 transition-transform">
+                        <span>${item.nome}</span>
+                        <span class="text-neutral-600">${item.total}</span>
+                    </div>
+                `;
+            });
+
+            listHTML += `</div>`;
+            content.innerHTML = listHTML;
+        }
+
+        // Filtrar catálogo baseado na escolha da lista (Ex: Clicou em Japão)
+        function filtrarPorMetadata(campo, valor) {
+            const valorLimpo = limparTexto(valor);
+            const filtradas = obras.filter(obra => {
+                if (campo === 'generos') {
+                    return limparTexto(obra.generos).includes(valorLimpo);
+                }
+                return limparTexto(obra[campo]) === valorLimpo;
+            });
+            renderGradeObras(filtradas, valor.toUpperCase());
+        }
+
+        // TELA 4 e 5: PÁGINA DE DETALHES DA OBRA (Estilo Imagens 4 e 5)
+        function abrirDetalhes(idObra) {
+            const obra = obras.find(o => o.id_obra == idObra);
+            if (!obra) return;
+
+            telaAtual = 'detail';
+            const content = document.getElementById('app-content');
+            content.className = "w-full flex flex-col items-center animate-fadeIn text-left font-serif px-1";
+
+            // Montagem dos Badges de Gêneros clicáveis
+            let badgesGeneros = "";
+            if (obra.generos) {
+                obra.generos.split(',').forEach(g => {
+                    let nomeG = g.trim();
+                    badgesGeneros += `<span onclick="filtrarPorMetadata('generos', '${nomeG}')" class="inline-block border border-neutral-700 rounded-full px-2.5 py-0.5 text-[10px] uppercase font-sans tracking-wider mr-1.5 mb-1.5 cursor-pointer hover:bg-neutral-900 transition-colors text-neutral-300">${nomeG}</span>`;
+                });
+            }
+
+            // Metadados básicos
+            const diretorTexto = obra.diretor ? `por ${obra.diretor}` : '';
+            const metadataLinha = [obra.ano, obra.classificacao ? `${obra.classificacao} anos` : '', obra.pais, obra.duracao_ou_status].filter(Boolean).join('  |  ');
+
+            let detailHTML = `
+                <div class="w-full flex justify-end mb-3">
+                    <button onclick="voltarParaGradeOuHome()" class="mono text-2xl font-light text-neutral-500 hover:text-white transition-colors">✕</button>
+                </div>
+
+                <div class="w-full aspect-[16/9] bg-neutral-900 rounded-xl overflow-hidden mb-6 border border-neutral-900">
+                    <img src="${obra.capa_banner}" alt="Banner" class="w-full h-full object-cover opacity-80" onerror="this.src='https://placehold.co/800x450/111/fff?text=${obra.titulo}'">
+                </div>
+
+                <div class="w-full flex flex-col items-start border-b border-neutral-900 pb-4 mb-4">
+                    <h2 class="text-3xl tracking-tight leading-tight mb-0.5">${obra.titulo}</h2>
+                    <p class="text-xs italic text-neutral-400 font-sans tracking-wide mb-3">${diretorTexto}</p>
+                    
+                    <p class="mono text-[10px] text-neutral-500 tracking-wider uppercase mb-3">${metadataLinha}</p>
+                    
+                    <div class="flex flex-wrap items-center">
+                        <span class="inline-block bg-neutral-900 rounded px-2 py-0.5 text-[10px] uppercase font-sans font-bold tracking-wider mr-2 mb-1.5 text-neutral-400">${obra.tipo}</span>
+                        ${badgesGeneros}
+                    </div>
+
+                    ${obra.titulos_alternativos ? `
+                    <p class="text-[11px] font-sans text-neutral-500 mt-2 leading-relaxed">
+                        <strong class="text-neutral-400 font-medium">Outros títulos:</strong><br>${obra.titulos_alternativos.split(',').join('<br>')}
+                    </p>` : ''}
+                </div>
+
+                <div class="w-full text-xs text-neutral-300 font-sans leading-relaxed tracking-wide mb-6 whitespace-pre-line">
+                    ${obra.sinopse || 'Nenhuma sinopse disponível...'}
+                </div>
+            `;
+
+            // SEÇÃO DE LINKS: Se for FILME, exibe direto na tela
+            if (limparTexto(obra.tipo) === 'filme') {
+                detailHTML += `
+                    <div class="w-full grid grid-cols-2 gap-8 font-sans border-t border-neutral-950 pt-4 mt-2">
+                        <div class="flex flex-col items-start">
+                            <h4 class="text-xs font-serif underline underline-offset-4 tracking-wider mb-3 text-neutral-200">Assistir</h4>
+                            ${obra.filme_assistir_leg ? `<a href="${obra.filme_assistir_leg}" target="_blank" class="w-full text-center border border-neutral-700 hover:border-white rounded-full py-2 text-xs font-medium tracking-wide mb-2 transition-all active:scale-95 text-neutral-300 hover:text-white">Dublado</a>` : ''}
+                            ${obra.filme_assistir_dub ? `<a href="${obra.filme_assistir_dub}" target="_blank" class="w-full text-center border border-neutral-700 hover:border-white rounded-full py-2 text-xs font-medium tracking-wide transition-all active:scale-95 text-neutral-300 hover:text-white">Legendado</a>` : ''}
+                        </div>
+                        <div class="flex flex-col items-start">
+                            <h4 class="text-xs font-serif underline underline-offset-4 tracking-wider mb-3 text-neutral-200">Download</h4>
+                            ${obra.filme_down_gofile_leg || obra.filme_down_transfer_leg ? `
+                                <div class="w-full text-[10px] text-neutral-500 uppercase font-mono tracking-widest text-center mb-1">Legendado</div>
+                                <div class="w-full grid grid-cols-2 gap-1.5 mb-3">
+                                    ${obra.filme_down_gofile_leg ? `<a href="${obra.filme_down_gofile_leg}" target="_blank" class="text-center border border-neutral-800 hover:border-neutral-500 rounded-full py-1 text-[10px] transition-colors">Gofile</a>` : ''}
+                                    ${obra.filme_down_transfer_leg ? `<a href="${obra.filme_down_transfer_leg}" target="_blank" class="text-center border border-neutral-800 hover:border-neutral-500 rounded-full py-1 text-[10px] transition-colors">Transfer</a>` : ''}
+                                </div>
+                            ` : ''}
+                            ${obra.filme_down_gofile_dub || obra.filme_down_transfer_dub ? `
+                                <div class="w-full text-[10px] text-neutral-500 uppercase font-mono tracking-widest text-center mb-1">Dublado</div>
+                                <div class="w-full grid grid-cols-2 gap-1.5">
+                                    ${obra.filme_down_gofile_dub ? `<a href="${obra.filme_down_gofile_dub}" target="_blank" class="text-center border border-neutral-800 hover:border-neutral-500 rounded-full py-1 text-[10px] transition-colors">Gofile</a>` : ''}
+                                    ${obra.filme_down_transfer_dub ? `<a href="${obra.filme_down_transfer_dub}" target="_blank" class="text-center border border-neutral-800 hover:border-neutral-500 rounded-full py-1 text-[10px] transition-colors">Transfer</a>` : ''}
+                                </div>
+                            ` : ''}
+                        </div>
+                    </div>
+                `;
+            } else {
+                // SEÇÃO DE LINKS: Se for Dorama/Anime/Série, filtra e agrupa os episódios da Aba 2
+                const epsDaObra = episodios.filter(e => e.id_obra_relacionada == obra.id_obra);
+                
+                // Agrupa por Temporada
+                let temporadasMap = {};
+                epsDaObra.forEach(ep => {
+                    let t = ep.temporada || "1";
+                    if (!temporadasMap[t]) temporadasMap[t] = [];
+                    temporadasMap[t].push(ep);
+                });
+
+                // Ordena episódios dentro de cada temporada
+                for (let t in temporadasMap) {
+                    temporadasMap[t].sort((a, b) => parseInt(a.numero_episodio) - parseInt(b.numero_episodio));
+                }
+
+                let listaTemporadas = Object.keys(temporadasMap).sort((a, b) => parseInt(a) - parseInt(b));
+
+                if (listaTemporadas.length === 0) {
+                    detailHTML += `<p class="mono text-[10px] text-neutral-600 border-t border-neutral-950 pt-4 w-full text-center">NENHUM EPISÓDIO LISTADO ATÉ O MOMENTO.</p>`;
+                } else {
+                    detailHTML += `<div class="w-full border-t border-neutral-900 pt-4 font-sans">`;
+                    
+                    listaTemporadas.forEach(temp => {
+                        detailHTML += `
+                            <h4 class="font-serif text-xl tracking-tight mb-4 mt-2 text-neutral-100">Temporada ${temp}</h4>
+                            <div class="w-full flex flex-col gap-5 mb-6">
+                        `;
+
+                        temporadasMap[temp].forEach(ep => {
+                            const nomeEpisodio = ep.titulo_episodio || `EP.${ep.numero_episodio.toString().padStart(2, '0')} | Capítulo`;
+                            
+                            detailHTML += `
+                                <div class="w-full bg-neutral-950/40 border border-neutral-950 rounded-lg p-3 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                                    <div class="flex items-center gap-2">
+                                        <span class="mono text-[11px] text-neutral-500">▶</span>
+                                        <span class="text-xs font-medium text-neutral-300">${nomeEpisodio}</span>
+                                    </div>
+                                    
+                                    <div class="flex flex-wrap items-center gap-x-4 gap-y-2 text-[11px] text-neutral-400">
+                                        ${ep.assistir_leg || ep.assistir_dub ? `
+                                            <div class="flex items-center gap-1.5 border-r border-neutral-800 pr-3">
+                                                <span class="text-[10px] text-neutral-600 uppercase font-mono">Ver:</span>
+                                                ${ep.assistir_leg ? `<a href="${ep.assistir_leg}" target="_blank" class="hover:text-white underline">Leg</a>` : ''}
+                                                ${ep.assistir_dub ? `<a href="${ep.assistir_dub}" target="_blank" class="hover:text-white underline">Dub</a>` : ''}
+                                            </div>
+                                        ` : ''}
+                                        
+                                        ${ep.down_gofile_leg || ep.down_transfer_leg ? `
+                                            <div class="flex items-center gap-1.5 ${ep.down_gofile_dub || ep.down_transfer_dub ? 'border-r border-neutral-800 pr-3' : ''}">
+                                                <span class="text-[10px] text-neutral-600 uppercase font-mono">Leg:</span>
+                                                ${ep.down_gofile_leg ? `<a href="${ep.down_gofile_leg}" target="_blank" class="hover:text-white">Gofile</a>` : ''}
+                                                ${ep.down_transfer_leg ? `<a href="${ep.down_transfer_leg}" target="_blank" class="hover:text-white">Transfer</a>` : ''}
+                                            </div>
+                                        ` : ''}
+
+                                        ${ep.down_gofile_dub || ep.down_transfer_dub ? `
+                                            <div class="flex items-center gap-1.5">
+                                                <span class="text-[10px] text-neutral-600 uppercase font-mono">Dub:</span>
+                                                ${ep.down_gofile_dub ? `<a href="${ep.down_gofile_dub}" target="_blank" class="hover:text-white">Gofile</a>` : ''}
+                                                ${ep.down_transfer_dub ? `<a href="${ep.down_transfer_dub}" target="_blank" class="hover:text-white">Transfer</a>` : ''}
+                                            </div>
+                                        ` : ''}
+                                    </div>
+                                </div>
+                            `;
+                        });
+
+                        detailHTML += `</div>`;
+                    });
+
+                    detailHTML += `</div>`;
+                }
+            }
+
+            content.innerHTML = detailHTML;
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+        }
+
+        // CONTROLADORES DE RETORNO DAS TELAS
+        function voltarParaHome() {
+            showHome();
+        }
+
+        function voltarParaGradeOuHome() {
+            // Se o usuário veio de uma busca ou grade, ele volta para ela. Caso contrário, vai para a Home.
+            if (document.getElementById('searchBar').value.trim() !== '') {
+                realizarBusca(document.getElementById('searchBar').value);
+            } else {
+                showHome();
+            }
+        }
+
+        // ESCUTA DA BARRA DE BUSCA EM TEMPO REAL
+        function realizarBusca(termo) {
+            if (!termo || termo.trim() === "") {
+                if(telaAtual !== 'home') showHome();
+                return;
+            }
+            
+            const termoLimpo = limparTexto(termo);
+            
+            // Varredura ultra inteligente por múltiplos campos de texto combinados
+            const filtrados = obras.filter(obra => {
+                return limparTexto(obra.titulo).includes(termoLimpo) ||
+                       limparTexto(obra.titulos_alternativos).includes(termoLimpo) ||
+                       limparTexto(obra.diretor).includes(termoLimpo) ||
+                       limparTexto(obra.generos).includes(termoLimpo) ||
+                       limparTexto(obra.pais).includes(termoLimpo) ||
+                       limparTexto(obra.tipo).includes(termoLimpo);
+            });
+            
+            renderGradeObras(filtrados, `RESULTADOS PARA "${termo.toUpperCase()}"`);
+        }
+
+        document.getElementById('searchBar').addEventListener('input', function(e) {
+            realizarBusca(e.target.value);
         });
 
-        // Configuração da barra de busca
-        document.getElementById('searchBar').addEventListener('input', function(e) {
-            const termoBuscado = limparTexto(e.target.value);
-            // Aqui faremos a mágica de filtrar os itens na próxima fase!
-            console.log("Você está digitando:", termoBuscado);
-        });
+        // DISPARO INICIAL
+        inicializarAcervo();
     </script>
 </body>
 </html>
